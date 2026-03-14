@@ -395,7 +395,7 @@ async function parsePaste() {
 
   setStatus('<span class="spinner"></span>Parsing item...', '');
   try {
-    const res = await fetch('/api/parse_item', {
+    const res = await fetch('/timeless/api/parse_item', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({item_text: text})
@@ -423,7 +423,7 @@ async function doSearch() {
   searchBtn.disabled = true;
 
   try {
-    const res = await fetch('/api/search', {
+    const res = await fetch('/timeless/api/search', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({jewel_type, seed})

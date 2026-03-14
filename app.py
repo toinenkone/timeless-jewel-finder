@@ -1,11 +1,36 @@
-from flask import Flask, render_template, request, jsonify
+import os
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, Response
 from data_loader import DataLoader, JEWEL_TYPES
 
 app = Flask(__name__)
+
+AUTH_USERNAME = os.environ.get('AUTH_USERNAME', 'admin')
+AUTH_PASSWORD = os.environ.get('AUTH_PASSWORD', 'changeme')
+
 loader = DataLoader()
 
 
-@app.route('/')
+def _authenticate():
+    return Response(
+        'Authentication required.',
+        401,
+        {'WWW-Authenticate': 'Basic realm="Timeless Jewel Finder"'},
+    )
+
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or auth.username != AUTH_USERNAME or auth.password != AUTH_PASSWORD:
+            return _authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/timeless/')
+@requires_auth
 def index():
     jewel_type_list = [
         {'id': jid, 'name': jinfo['name'],
@@ -16,7 +41,8 @@ def index():
     return render_template('index.html', jewel_types=jewel_type_list)
 
 
-@app.route('/api/search', methods=['POST'])
+@app.route('/timeless/api/search', methods=['POST'])
+@requires_auth
 def search():
     data = request.get_json()
     jewel_type = int(data.get('jewel_type', 0))
@@ -25,7 +51,8 @@ def search():
     return jsonify(result)
 
 
-@app.route('/api/parse_item', methods=['POST'])
+@app.route('/timeless/api/parse_item', methods=['POST'])
+@requires_auth
 def parse_item():
     data = request.get_json()
     item_text = data.get('item_text', '')
@@ -33,7 +60,8 @@ def parse_item():
     return jsonify(result)
 
 
-@app.route('/api/jewel_types')
+@app.route('/timeless/api/jewel_types')
+@requires_auth
 def jewel_types():
     return jsonify([
         {'id': jid, 'name': jinfo['name'],
@@ -44,4 +72,4 @@ def jewel_types():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=3122)

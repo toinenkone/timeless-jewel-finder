@@ -7,8 +7,8 @@ import zlib
 import math
 from collections import defaultdict
 
-POB_DATA = "/home/cc/codewithclaude/PathOfBuilding/src/Data/TimelessJewelData"
-POB_TREE = "/home/cc/codewithclaude/PathOfBuilding/src/TreeData/3_25"
+POB_DATA = "/opt/PathOfBuilding/src/Data/TimelessJewelData"
+POB_TREE = "/opt/PathOfBuilding/src/TreeData/3_25"
 
 JEWEL_TYPES = {
     1: {"name": "Glorious Vanity",  "file": "GloriousVanity",  "seed_min": 100,   "seed_max": 8000,   "seed_step": 1},

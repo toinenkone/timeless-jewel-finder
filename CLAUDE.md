@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pip install flask
-python app.py
-# Open http://localhost:5000
+AUTH_USERNAME=admin AUTH_PASSWORD=yourpassword python app.py
+# Open http://localhost:3122/timeless/
 ```
+
+Credentials default to `admin` / `changeme` if env vars are not set. Always set them explicitly in production.
 
 ## Deployment
 
@@ -132,9 +134,11 @@ cd -
 #      POB_TREE = "/home/cc/codewithclaude/PathOfBuilding/src/TreeData/3_25"
 #    Change these two constants to match your install path.
 
-# 6. Run
+# 6. Set credentials and run
+export AUTH_USERNAME=youruser
+export AUTH_PASSWORD=yourpassword
 python3 app.py
-# Listens on 0.0.0.0:5000
+# Listens on 0.0.0.0:3122 — visit http://yourserver:3122/timeless/
 ```
 
 ### Running as a service (systemd)
@@ -150,6 +154,8 @@ WorkingDirectory=/opt/timeless-jewel-finder
 ExecStart=/usr/bin/python3 app.py
 Restart=on-failure
 User=www-data
+Environment=AUTH_USERNAME=youruser
+Environment=AUTH_PASSWORD=yourpassword
 
 [Install]
 WantedBy=multi-user.target
@@ -165,9 +171,10 @@ sudo systemctl enable --now jewel-finder
 server {
     listen 80;
     server_name yourserver.example.com;
-    location / {
-        proxy_pass http://127.0.0.1:5000;
+    location /timeless/ {
+        proxy_pass http://127.0.0.1:3122/timeless/;
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 ```
