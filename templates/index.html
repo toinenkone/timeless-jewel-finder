@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timeless Jewel Finder</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d0d0d;
+    color: #c8b87a;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a0a00, #2a1500);
+    border-bottom: 2px solid #7a5a20;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    color: #c8a44a;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px #c8a44a55;
+  }
+
+  header span.subtitle {
+    color: #806840;
+    font-size: 13px;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .panel {
+    background: #111;
+    border: 1px solid #3a2a10;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    color: #c8a44a;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2a2010;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label {
+    color: #806840;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  select, input[type=number] {
+    background: #1a1a1a;
+    border: 1px solid #4a3a20;
+    color: #c8b87a;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input[type=number]:focus {
+    border-color: #c8a44a;
+  }
+
+  select { min-width: 180px; }
+  input[type=number] { width: 130px; }
+
+  .btn {
+    background: linear-gradient(135deg, #5a3a10, #7a5a20);
+    border: 1px solid #c8a44a;
+    color: #c8b87a;
+    padding: 8px 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn:hover {
+    background: linear-gradient(135deg, #7a5a20, #9a7a30);
+    color: #fff;
+    box-shadow: 0 0 8px #c8a44a55;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #4a3a20;
+    font-size: 12px;
+    margin: 14px 0;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #2a2010;
+  }
+
+  textarea {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #4a3a20;
+    color: #c8b87a;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+    outline: none;
+  }
+
+  textarea:focus { border-color: #c8a44a; }
+
+  .paste-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .paste-row textarea { flex: 1; min-height: 80px; }
+
+  /* Results */
+  #results-panel { display: none; }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .results-count {
+    color: #806840;
+    font-size: 13px;
+  }
+
+  .result-card {
+    background: #161616;
+    border: 1px solid #2a2010;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #1c1a10;
+    border-bottom: 1px solid #2a2010;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .result-card-header:hover { background: #222010; }
+
+  .socket-label {
+    font-size: 15px;
+    color: #e8c870;
+    font-weight: bold;
+  }
+
+  .socket-meta {
+    color: #606040;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .badge {
+    background: #5a3a10;
+    border: 1px solid #c8a44a;
+    color: #c8b87a;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .badge.high { background: #3a1a00; border-color: #ff8800; color: #ffaa44; }
+
+  .result-card-body { padding: 10px 14px; }
+
+  .match-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #1e1c10;
+  }
+
+  .match-row:last-child { border-bottom: none; }
+
+  .match-count {
+    min-width: 28px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #c8a44a;
+    line-height: 1;
+  }
+
+  .match-count.high { color: #ff8800; }
+
+  .match-notable {
+    color: #e8d8a0;
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 160px;
+  }
+
+  .match-nodes {
+    color: #706858;
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .chevron {
+    color: #806840;
+    transition: transform 0.2s;
+    font-size: 16px;
+  }
+
+  .result-card.collapsed .result-card-body { display: none; }
+  .result-card.collapsed .chevron { transform: rotate(-90deg); }
+
+  /* Status */
+  #status {
+    color: #806840;
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 20px;
+  }
+
+  .error-msg { color: #cc4444; }
+  .success-msg { color: #44aa44; }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #4a3a20;
+    border-top-color: #c8a44a;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .no-results {
+    color: #606040;
+    text-align: center;
+    padding: 30px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⧫ Timeless Jewel Finder</h1>
+    <span class="subtitle">Find jewel socket locations with 2+ matching notables</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Search Form -->
+  <div class="panel">
+    <div class="panel-title">Search</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Jewel Type</label>
+        <select id="jewel-type">
+          {% for jt in jewel_types %}
+          <option value="{{ jt.id }}"
+            data-min="{{ jt.seed_min }}"
+            data-max="{{ jt.seed_max }}"
+            data-step="{{ jt.seed_step }}">
+            {{ jt.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Seed</label>
+        <input type="number" id="seed-input" min="100" max="18000" step="1" value="4869" />
+      </div>
+
+      <button class="btn" id="search-btn" onclick="doSearch()">Search</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="divider">OR PASTE ITEM</div>
+
+    <div class="paste-row">
+      <textarea id="item-paste" placeholder="Paste item text here (Ctrl+C on item in PoE, then paste)..."></textarea>
+      <button class="btn" onclick="parsePaste()">Parse &amp; Search</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="panel" id="results-panel">
+    <div class="results-header">
+      <div class="panel-title" style="margin-bottom:0">Results</div>
+      <div class="results-count" id="results-count"></div>
+    </div>
+    <div id="results-list"></div>
+  </div>
+
+</div>
+
+<script>
+const jewelSelect = document.getElementById('jewel-type');
+const seedInput = document.getElementById('seed-input');
+const statusEl = document.getElementById('status');
+const searchBtn = document.getElementById('search-btn');
+
+function updateSeedConstraints() {
+  const opt = jewelSelect.options[jewelSelect.selectedIndex];
+  const min = parseInt(opt.dataset.min);
+  const max = parseInt(opt.dataset.max);
+  const step = parseInt(opt.dataset.step);
+  seedInput.min = min;
+  seedInput.max = max;
+  seedInput.step = step;
+  seedInput.placeholder = `${min}–${max}`;
+  // Clamp current value
+  const v = parseInt(seedInput.value) || min;
+  seedInput.value = Math.max(min, Math.min(max, v));
+}
+
+jewelSelect.addEventListener('change', updateSeedConstraints);
+updateSeedConstraints();
+
+function setStatus(msg, type) {
+  statusEl.innerHTML = msg;
+  statusEl.className = type === 'error' ? 'error-msg' : type === 'ok' ? 'success-msg' : '';
+}
+
+async function parsePaste() {
+  const text = document.getElementById('item-paste').value.trim();
+  if (!text) { setStatus('Paste item text first.', 'error'); return; }
+
+  setStatus('<span class="spinner"></span>Parsing item...', '');
+  try {
+    const res = await fetch('/api/parse_item', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({item_text: text})
+    });
+    const data = await res.json();
+    if (data.error) { setStatus(data.error, 'error'); return; }
+
+    // Set form values
+    jewelSelect.value = data.jewel_type;
+    updateSeedConstraints();
+    seedInput.value = data.seed;
+
+    setStatus(`Parsed: ${data.jewel_type} / seed ${data.seed}`, 'ok');
+    await doSearch();
+  } catch(e) {
+    setStatus('Parse failed: ' + e, 'error');
+  }
+}
+
+async function doSearch() {
+  const jewel_type = parseInt(jewelSelect.value);
+  const seed = parseInt(seedInput.value);
+
+  setStatus('<span class="spinner"></span>Searching...', '');
+  searchBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({jewel_type, seed})
+    });
+    const data = await res.json();
+    searchBtn.disabled = false;
+
+    if (data.error) { setStatus(data.error, 'error'); return; }
+
+    renderResults(data);
+    setStatus('', '');
+  } catch(e) {
+    searchBtn.disabled = false;
+    setStatus('Search failed: ' + e, 'error');
+  }
+}
+
+function renderResults(data) {
+  const panel = document.getElementById('results-panel');
+  const list = document.getElementById('results-list');
+  const countEl = document.getElementById('results-count');
+
+  panel.style.display = 'block';
+
+  const results = data.results || [];
+  countEl.textContent = `${results.length} socket${results.length !== 1 ? 's' : ''} found — ${data.jewel_type} seed ${data.seed}`;
+
+  if (results.length === 0) {
+    list.innerHTML = '<div class="no-results">No sockets found with 2+ matching notables for this seed.</div>';
+    return;
+  }
+
+  list.innerHTML = results.map((r, i) => {
+    const maxCount = Math.max(...r.matches.map(m => m.count));
+    const badgeClass = maxCount >= 3 ? 'badge high' : 'badge';
+    const matches = r.matches.map(m => {
+      const nodeNames = m.nodes.map(n => n.node_name).join(', ');
+      const countClass = m.count >= 3 ? 'match-count high' : 'match-count';
+      return `<div class="match-row">
+        <div class="${countClass}">${m.count}×</div>
+        <div class="match-notable">${escHtml(m.notable)}</div>
+        <div class="match-nodes">${escHtml(nodeNames)}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="result-card" id="card-${i}">
+      <div class="result-card-header" onclick="toggleCard(${i})">
+        <div>
+          <div class="socket-label">${escHtml(r.label)}</div>
+          <div class="socket-meta">Socket ID: ${r.socket_id} · ${r.total_notables_in_radius} notables in radius</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="${badgeClass}">${r.matches.length} notable${r.matches.length !== 1 ? 's' : ''} match</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="result-card-body">${matches}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(i) {
+  const card = document.getElementById('card-' + i);
+  card.classList.toggle('collapsed');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// Allow Enter key to trigger search
+seedInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+</script>
+</body>
+</html>
