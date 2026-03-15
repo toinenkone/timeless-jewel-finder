@@ -77,6 +77,12 @@ def passives():
     return jsonify(loader.get_all_replacement_notables())
 
 
+@app.route('/timeless/api/passives/<int:jewel_type>')
+@requires_auth
+def passives_for_jewel(jewel_type):
+    return jsonify(loader.get_replacement_notables_for_jewel(jewel_type))
+
+
 @app.route('/timeless/api/sockets')
 @requires_auth
 def sockets():

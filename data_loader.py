@@ -543,10 +543,20 @@ class DataLoader:
             for p in sorted(self.passives, key=lambda p: p['dn'])
         ]
 
+    def get_replacement_notables_for_jewel(self, jewel_type):
+        """Returns replacement notables reachable by the given jewel type, sorted by name."""
+        l2g = self.local_to_global.get(jewel_type, {})
+        valid_global_ids = {gid for gid in l2g.values() if gid >= TIMELESS_JEWEL_ADDITIONS}
+        result = []
+        for i, p in enumerate(self.passives):
+            if (TIMELESS_JEWEL_ADDITIONS + i) in valid_global_ids:
+                result.append({'name': p['dn'], 'sd': p.get('sd', [])})
+        return sorted(result, key=lambda p: p['name'])
+
     def get_all_sockets(self):
         """Returns list of all jewel socket info sorted by label."""
         return sorted([
-            {'id': sid, 'label': s['label'], 'keystone': s['keystone']}
+            {'id': sid, 'label': s['label'], 'keystone': s['keystone'], 'x': s['x'], 'y': s['y']}
             for sid, s in self.jewel_sockets.items()
         ], key=lambda s: s['label'])
 
@@ -692,15 +702,28 @@ class DataLoader:
         for s in matching_sets[1:]:
             matching = matching & s
 
+        notable_nodes = socket['notable_nodes']
         seeds = []
         for so in sorted(matching):
             actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
-            seeds.append(actual_seed)
+            total_notables = 0
+            for nid in notable_nodes:
+                entry = self.node_index_map.get(nid)
+                if entry is None:
+                    continue
+                byte_pos = entry['index'] * seed_size + so
+                if byte_pos < len(lut_data):
+                    local_id = lut_data[byte_pos]
+                    global_id = l2g.get(local_id, local_id)
+                    if global_id >= TIMELESS_JEWEL_ADDITIONS:
+                        total_notables += 1
+            seeds.append({'seed': actual_seed, 'notable_count': total_notables})
 
         return {
             "seeds": seeds,
             "count": len(seeds),
             "socket_label": socket['label'],
+            "socket_total_notables": len(notable_nodes),
             "jewel_type": JEWEL_TYPES[jewel_type]['name'],
         }
 

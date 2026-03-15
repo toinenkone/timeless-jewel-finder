@@ -301,6 +301,18 @@
   /* Node loading state */
   .loading-nodes { color: #806840; font-style: italic; padding: 10px 0; }
   .info-note { color: #806840; font-size: 12px; margin-top: 8px; font-style: italic; }
+
+  /* Socket map SVG */
+  .socket-map-wrap {
+    display: none;
+    margin-top: 14px;
+  }
+  .socket-map-wrap svg {
+    display: block;
+    background: #0a0a0a;
+    border: 1px solid #3a2a10;
+    border-radius: 4px;
+  }
 </style>
 </head>
 <body>
@@ -462,6 +474,10 @@
         </div>
       </div>
 
+      <div class="socket-map-wrap" id="c-socket-map-wrap">
+        <svg id="c-socket-map" width="260" height="260" viewBox="0 0 260 260"></svg>
+      </div>
+
       <div id="c-nodes-section" style="display:none; margin-top:16px;">
         <div class="panel-title" style="margin-top:0">Notable Nodes in Radius — select which to convert</div>
         <div id="c-nodes-list"></div>
@@ -488,8 +504,9 @@
 
 <script>
 // ─── Global state ─────────────────────────────────────────────────────────────
-let allPassives = [];  // [{name, sd}] loaded once
-let allSockets = [];   // [{id, label, keystone}] loaded once
+let allPassives = [];   // [{name, sd}] all replacement notables, loaded once
+let allSockets = [];    // [{id, label, keystone, x, y}] loaded once
+let convPassives = [];  // [{name, sd}] filtered for current jewel type in Tab 3
 
 // ─── PoE Trade stat IDs per jewel type (from LegionTradeIds.lua) ──────────────
 const TRADE_STAT_IDS = {
@@ -561,9 +578,14 @@ async function loadPassives() {
     allPassives = await res.json();
     const dl = document.getElementById('n-notable-list');
     dl.innerHTML = allPassives.map(p => `<option value="${escHtml(p.name)}">`).join('');
-    // Also populate conversion target dropdowns if already open
-    updateConvTargetDropdowns();
   } catch(e) { console.error('Failed to load passives', e); }
+}
+
+async function loadConvPassives(jewel_type) {
+  try {
+    const res = await fetch(`/timeless/api/passives/${jewel_type}`);
+    convPassives = await res.json();
+  } catch(e) { console.error('Failed to load passives for jewel type', e); convPassives = []; }
 }
 
 async function loadSockets() {
@@ -573,7 +595,49 @@ async function loadSockets() {
     const sel = document.getElementById('c-socket');
     sel.innerHTML = '<option value="">— select socket —</option>' +
       allSockets.map(s => `<option value="${s.id}">${escHtml(s.label)}</option>`).join('');
+    drawSocketMap(null);
   } catch(e) { console.error('Failed to load sockets', e); }
+}
+
+// ─── Socket map SVG ────────────────────────────────────────────────────────────
+function drawSocketMap(selectedId) {
+  if (allSockets.length === 0) return;
+  const wrap = document.getElementById('c-socket-map-wrap');
+  const svg = document.getElementById('c-socket-map');
+  wrap.style.display = 'block';
+
+  const W = 260, H = 260, PAD = 14;
+  const xs = allSockets.map(s => s.x);
+  const ys = allSockets.map(s => s.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const scaleX = (W - PAD * 2) / (maxX - minX || 1);
+  const scaleY = (H - PAD * 2) / (maxY - minY || 1);
+  const scale = Math.min(scaleX, scaleY);
+  const offX = PAD + ((W - PAD * 2) - (maxX - minX) * scale) / 2;
+  const offY = PAD + ((H - PAD * 2) - (maxY - minY) * scale) / 2;
+
+  function tx(x) { return offX + (x - minX) * scale; }
+  function ty(y) { return offY + (y - minY) * scale; }
+
+  // Jewel radius in SVG units (LARGE_RADIUS = 1800 tree units)
+  const radiusSvg = 1800 * scale;
+
+  let circles = '';
+  const sel = allSockets.find(s => s.id === selectedId);
+  if (sel) {
+    circles += `<circle cx="${tx(sel.x).toFixed(1)}" cy="${ty(sel.y).toFixed(1)}" r="${radiusSvg.toFixed(1)}" fill="none" stroke="#c8a44a33" stroke-width="1" stroke-dasharray="4,3"/>`;
+  }
+  for (const s of allSockets) {
+    const isSelected = s.id === selectedId;
+    if (isSelected) {
+      circles += `<circle cx="${tx(s.x).toFixed(1)}" cy="${ty(s.y).toFixed(1)}" r="6" fill="#c8a44a" stroke="#fff8" stroke-width="1"/>`;
+    } else {
+      circles += `<circle cx="${tx(s.x).toFixed(1)}" cy="${ty(s.y).toFixed(1)}" r="3" fill="#4a3a20" stroke="#806840" stroke-width="0.5"/>`;
+    }
+  }
+
+  svg.innerHTML = circles;
 }
 
 // ─── TAB 1: DUPLICATE FINDER ───────────────────────────────────────────────────
@@ -787,13 +851,16 @@ const statusEl3 = document.getElementById('status3');
 const cSearchBtn = document.getElementById('c-search-btn');
 let convNodes = [];  // Notable nodes for currently selected socket
 
-function onConvJewelChange() {
-  // Clear socket selection and nodes when jewel type changes
+async function onConvJewelChange() {
   document.getElementById('c-socket').value = '';
   document.getElementById('c-nodes-section').style.display = 'none';
   document.getElementById('c-nodes-list').innerHTML = '';
   cSearchBtn.disabled = true;
   document.getElementById('c-results-panel').style.display = 'none';
+  drawSocketMap(null);
+  const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
+  convPassives = [];
+  await loadConvPassives(jewel_type);
 }
 
 async function onSocketChange() {
@@ -803,10 +870,13 @@ async function onSocketChange() {
   cSearchBtn.disabled = true;
   document.getElementById('c-results-panel').style.display = 'none';
 
-  if (!socket_id) { nodesSection.style.display = 'none'; return; }
+  if (!socket_id) { nodesSection.style.display = 'none'; drawSocketMap(null); return; }
+
+  drawSocketMap(parseInt(socket_id));
 
   // Ensure passives are loaded for target dropdowns
-  if (allPassives.length === 0) await loadPassives();
+  const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
+  if (convPassives.length === 0) await loadConvPassives(jewel_type);
 
   nodesList.innerHTML = '<div class="loading-nodes"><span class="spinner"></span>Loading notable nodes...</div>';
   nodesSection.style.display = 'block';
@@ -829,7 +899,7 @@ function renderConvNodes() {
   }
 
   const targetOptions = '<option value="">— any —</option>' +
-    allPassives.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('');
+    convPassives.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('');
 
   list.innerHTML = convNodes.map((n, i) => {
     const sdTip = n.sd && n.sd.length > 0
@@ -843,10 +913,6 @@ function renderConvNodes() {
   }).join('');
 }
 
-function updateConvTargetDropdowns() {
-  // Called when passives load but nodes are already shown
-  if (convNodes.length > 0) renderConvNodes();
-}
 
 async function doConversionSearch() {
   const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
@@ -893,6 +959,7 @@ function renderConvResults(data, conversions) {
   panel.style.display = 'block';
 
   const seeds = data.seeds || [];
+  const totalNotables = data.socket_total_notables || 0;
   const constraintDesc = conversions.map(c => {
     const node = convNodes.find(n => n.node_id === c.node_id);
     return `${node ? node.name : c.node_id} → ${c.target_notable}`;
@@ -906,20 +973,22 @@ function renderConvResults(data, conversions) {
   }
 
   const seedTags = seeds.map(s =>
-    `<span class="seed-tag" title="Click to copy">${s}</span>`
+    `<span class="seed-tag" title="Click to copy seed ${s.seed}">${s.seed} <span style="color:#806840;font-size:10px;">${s.notable_count}/${totalNotables}</span></span>`
   ).join('');
 
   list.innerHTML = `
-    <div style="color:#806840; font-size:12px; margin-bottom:10px;">${escHtml(constraintDesc)}</div>
+    <div style="color:#806840; font-size:12px; margin-bottom:6px;">${escHtml(constraintDesc)}</div>
+    <div style="color:#604830; font-size:11px; margin-bottom:10px;">Seed · notables converted / notables in radius</div>
     <div class="seed-grid">${seedTags}</div>
   `;
 
   list.querySelectorAll('.seed-tag').forEach(el => {
     el.addEventListener('click', () => {
-      navigator.clipboard.writeText(el.textContent).catch(() => {});
-      const orig = el.textContent;
+      const seedNum = el.firstChild.textContent.trim();
+      navigator.clipboard.writeText(seedNum).catch(() => {});
+      const orig = el.innerHTML;
       el.textContent = 'Copied!';
-      setTimeout(() => el.textContent = orig, 800);
+      setTimeout(() => el.innerHTML = orig, 800);
     });
   });
 }
