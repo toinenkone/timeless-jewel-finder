@@ -413,7 +413,7 @@
       <div class="form-row" style="margin-top:12px; align-items:center; gap:16px;">
         <div class="form-group">
           <label>PoE League (for trade links)</label>
-          <input type="text" id="n-league" placeholder="e.g. Standard, Settlers" value="Standard" style="min-width:200px" />
+          <input type="text" id="n-league" placeholder="e.g. Mirage, Standard" value="Mirage" style="min-width:200px" />
         </div>
         <div class="info-note" style="margin-top:14px;">Seeds open as PoE trade searches. Change the league name to match where you play.</div>
       </div>
@@ -502,11 +502,18 @@ const TRADE_STAT_IDS = {
 };
 
 function makeTradeUrl(jewel_type, seed) {
-  const league = (document.getElementById('n-league').value.trim() || 'Standard');
+  const league = (document.getElementById('n-league').value.trim() || 'Mirage');
   const ids = TRADE_STAT_IDS[jewel_type] || [];
   const query = {
     query: {
       status: { option: 'online' },
+      filters: {
+        trade_filters: {
+          filters: {
+            sale_type: { option: 'priced' }
+          }
+        }
+      },
       stats: [{
         type: 'count',
         value: { min: 1 },
