@@ -352,12 +352,12 @@ class DataLoader:
             if label is None:
                 label = f"Socket {socket_id}"
 
-            # Find notable nodes in large radius that have LUT entries
+            # Find notable and keystone nodes in large radius that have LUT entries
             notable_nodes = []
             for nid, node in self.tree_nodes.items():
                 if nid == socket_id:
                     continue
-                if not node['is_notable']:
+                if not (node['is_notable'] or node['is_keystone']):
                     continue
                 # Must have a LUT entry with index <= sizeNotable
                 lut_entry = self.node_index_map.get(nid)
@@ -548,13 +548,13 @@ class DataLoader:
         ]
 
     def get_replacement_notables_for_jewel(self, jewel_type):
-        """Returns replacement notables (no keystones) reachable by the given jewel type, sorted by name."""
+        """Returns all replacement passives (including keystones) reachable by the given jewel type, sorted by name."""
         l2g = self.local_to_global.get(jewel_type, {})
         valid_global_ids = {gid for gid in l2g.values() if gid >= TIMELESS_JEWEL_ADDITIONS}
         result = []
         for i, p in enumerate(self.passives):
-            if (TIMELESS_JEWEL_ADDITIONS + i) in valid_global_ids and not p.get('is_keystone', False):
-                result.append({'name': p['dn'], 'sd': p.get('sd', [])})
+            if (TIMELESS_JEWEL_ADDITIONS + i) in valid_global_ids:
+                result.append({'name': p['dn'], 'sd': p.get('sd', []), 'is_keystone': p.get('is_keystone', False)})
         return sorted(result, key=lambda p: p['name'])
 
     def get_all_sockets(self):
@@ -565,7 +565,7 @@ class DataLoader:
         ], key=lambda s: s['label'])
 
     def get_socket_notable_nodes(self, socket_id):
-        """Returns notable nodes for a socket with names and stats."""
+        """Returns notable and keystone nodes for a socket with names and stats."""
         socket = self.jewel_sockets.get(int(socket_id))
         if socket is None:
             return []
@@ -578,6 +578,7 @@ class DataLoader:
                 'node_id': nid,
                 'name': node['name'],
                 'sd': node.get('stats', []),
+                'is_keystone': node.get('is_keystone', False),
             })
         nodes.sort(key=lambda n: n['name'])
         return nodes

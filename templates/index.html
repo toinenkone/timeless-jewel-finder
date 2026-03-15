@@ -603,7 +603,8 @@ async function loadConvPassives(jewel_type) {
   try {
     const res = await fetch(`/timeless/api/passives/${jewel_type}`);
     convPassives = await res.json();
-  } catch(e) { console.error('Failed to load passives for jewel type', e); convPassives = []; }
+    convPassivesJewelType = jewel_type;
+  } catch(e) { console.error('Failed to load passives for jewel type', e); convPassives = []; convPassivesJewelType = 0; }
 }
 
 async function loadSockets() {
@@ -873,7 +874,8 @@ document.getElementById('n-notable-input').addEventListener('keydown', e => {
 // ─── TAB 3: CONVERSION FINDER ──────────────────────────────────────────────────
 const statusEl3 = document.getElementById('status3');
 const cSearchBtn = document.getElementById('c-search-btn');
-let convNodes = [];  // Notable nodes for currently selected socket
+let convNodes = [];              // Notable nodes for currently selected socket
+let convPassivesJewelType = 0;  // Which jewel type convPassives was loaded for
 
 async function onConvJewelChange() {
   document.getElementById('c-socket').value = '';
@@ -898,9 +900,9 @@ async function onSocketChange() {
 
   drawSocketMap(parseInt(socket_id));
 
-  // Ensure passives are loaded for target dropdowns
+  // Ensure passives are loaded for the current jewel type
   const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
-  if (convPassives.length === 0) await loadConvPassives(jewel_type);
+  if (convPassivesJewelType !== jewel_type) await loadConvPassives(jewel_type);
 
   nodesList.innerHTML = '<div class="loading-nodes"><span class="spinner"></span>Loading notable nodes...</div>';
   nodesSection.style.display = 'block';
@@ -922,15 +924,19 @@ function renderConvNodes() {
     return;
   }
 
-  const targetOptions = '<option value="">— any —</option>' +
-    convPassives.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('');
+  const notableOpts = convPassives.filter(p => !p.is_keystone);
+  const keystoneOpts = convPassives.filter(p => p.is_keystone);
+  let targetOptions = '<option value="">— any —</option>';
+  if (notableOpts.length) targetOptions += notableOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('');
+  if (keystoneOpts.length) targetOptions += `<optgroup label="Keystones">${keystoneOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('')}</optgroup>`;
 
   list.innerHTML = convNodes.map((n, i) => {
     const sdTip = n.sd && n.sd.length > 0
       ? `<span class="tt">[?]<span class="tt-box">${n.sd.map(l => escHtml(l)).join('<br>')}</span></span>`
       : '';
+    const ksTag = n.is_keystone ? ' <span style="color:#c8a44a;font-size:10px;border:1px solid #7a5a20;padding:1px 4px;border-radius:3px;">KEYSTONE</span>' : '';
     return `<div class="conv-row">
-      <div class="conv-node-name">${escHtml(n.name)} ${sdTip}</div>
+      <div class="conv-node-name">${escHtml(n.name)}${ksTag} ${sdTip}</div>
       <div class="conv-arrow">→</div>
       <select class="conv-select" data-node-id="${n.node_id}" id="conv-target-${i}">${targetOptions}</select>
     </div>`;
