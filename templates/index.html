@@ -506,7 +506,7 @@ function makeTradeUrl(jewel_type, seed) {
   const ids = TRADE_STAT_IDS[jewel_type] || [];
   const query = {
     query: {
-      status: { option: 'online' },
+      status: { option: 'any' },
       filters: {
         trade_filters: {
           filters: {
