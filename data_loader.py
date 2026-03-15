@@ -557,6 +557,18 @@ class DataLoader:
                 result.append({'name': p['dn'], 'sd': p.get('sd', []), 'is_keystone': p.get('is_keystone', False)})
         return sorted(result, key=lambda p: p['name'])
 
+    def get_additions_for_jewel(self, jewel_type):
+        """Returns additions (flat stat mods, global_id < 96) reachable by the given jewel type, sorted by stat text."""
+        l2g = self.local_to_global.get(jewel_type, {})
+        valid_gids = {gid for gid in l2g.values() if gid < TIMELESS_JEWEL_ADDITIONS}
+        result = []
+        for gid in sorted(valid_gids):
+            if gid < len(self.additions):
+                a = self.additions[gid]
+                sd = a.get('sd', [])
+                result.append({'gid': gid, 'dn': a['dn'], 'sd': sd, 'label': sd[0] if sd else a['dn']})
+        return sorted(result, key=lambda a: a['label'])
+
     def get_all_sockets(self):
         """Returns list of all jewel socket info sorted by label."""
         return sorted([
@@ -677,15 +689,20 @@ class DataLoader:
         matching_sets = []
         for conv in conversions:
             node_id = int(conv['node_id'])
-            target_name = conv['target_notable']
 
-            target_global_ids = {
-                TIMELESS_JEWEL_ADDITIONS + i
-                for i, p in enumerate(self.passives)
-                if p['dn'] == target_name
-            }
-            if not target_global_ids:
-                return {"error": f"Target notable '{target_name}' not found"}
+            if 'target_global_id' in conv:
+                # Addition target (flat stat mod, global_id < 96)
+                target_global_ids = {int(conv['target_global_id'])}
+            else:
+                # Replacement notable / keystone target
+                target_name = conv['target_notable']
+                target_global_ids = {
+                    TIMELESS_JEWEL_ADDITIONS + i
+                    for i, p in enumerate(self.passives)
+                    if p['dn'] == target_name
+                }
+                if not target_global_ids:
+                    return {"error": f"Target notable '{target_name}' not found"}
 
             target_local_ids = frozenset(lid for lid, gid in l2g.items() if gid in target_global_ids)
 

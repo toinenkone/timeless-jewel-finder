@@ -523,7 +523,8 @@
 // ─── Global state ─────────────────────────────────────────────────────────────
 let allPassives = [];   // [{name, sd}] all replacement notables, loaded once
 let allSockets = [];    // [{id, label, keystone, x, y}] loaded once
-let convPassives = [];  // [{name, sd}] filtered for current jewel type in Tab 3
+let convPassives = [];   // [{name, sd, is_keystone}] replacement notables/keystones for Tab 3
+let convAdditions = []; // [{gid, dn, sd, label}] flat stat additions for Tab 3 (LP/BR)
 
 // ─── PoE Trade stat IDs per jewel type (from LegionTradeIds.lua) ──────────────
 const TRADE_STAT_IDS = {
@@ -601,10 +602,14 @@ async function loadPassives() {
 
 async function loadConvPassives(jewel_type) {
   try {
-    const res = await fetch(`/timeless/api/passives/${jewel_type}`);
-    convPassives = await res.json();
+    const [pRes, aRes] = await Promise.all([
+      fetch(`/timeless/api/passives/${jewel_type}`),
+      fetch(`/timeless/api/additions/${jewel_type}`),
+    ]);
+    convPassives = await pRes.json();
+    convAdditions = await aRes.json();
     convPassivesJewelType = jewel_type;
-  } catch(e) { console.error('Failed to load passives for jewel type', e); convPassives = []; convPassivesJewelType = 0; }
+  } catch(e) { console.error('Failed to load passives for jewel type', e); convPassives = []; convAdditions = []; convPassivesJewelType = 0; }
 }
 
 async function loadSockets() {
@@ -886,6 +891,7 @@ async function onConvJewelChange() {
   drawSocketMap(null);
   const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
   convPassives = [];
+  convAdditions = [];
   await loadConvPassives(jewel_type);
 }
 
@@ -927,7 +933,8 @@ function renderConvNodes() {
   const notableOpts = convPassives.filter(p => !p.is_keystone);
   const keystoneOpts = convPassives.filter(p => p.is_keystone);
   let targetOptions = '<option value="">— any —</option>';
-  if (notableOpts.length) targetOptions += notableOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('');
+  if (convAdditions.length) targetOptions += `<optgroup label="Stat Bonuses">${convAdditions.map(a => `<option value="__gid__:${a.gid}">${escHtml(a.label)}</option>`).join('')}</optgroup>`;
+  if (notableOpts.length) targetOptions += `<optgroup label="Notables">${notableOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('')}</optgroup>`;
   if (keystoneOpts.length) targetOptions += `<optgroup label="Keystones">${keystoneOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('')}</optgroup>`;
 
   list.innerHTML = convNodes.map((n, i) => {
@@ -951,7 +958,10 @@ async function doConversionSearch() {
   // Collect conversions where a target is selected
   const conversions = [];
   document.querySelectorAll('.conv-select').forEach(sel => {
-    if (sel.value) {
+    if (!sel.value) return;
+    if (sel.value.startsWith('__gid__:')) {
+      conversions.push({ node_id: parseInt(sel.dataset.nodeId), target_global_id: parseInt(sel.value.slice(8)) });
+    } else {
       conversions.push({ node_id: parseInt(sel.dataset.nodeId), target_notable: sel.value });
     }
   });
@@ -991,7 +1001,14 @@ function renderConvResults(data, conversions) {
   const seeds = data.seeds || [];
   const constraintDesc = conversions.map(c => {
     const node = convNodes.find(n => n.node_id === c.node_id);
-    return `${node ? node.name : c.node_id} → ${c.target_notable}`;
+    let targetLabel;
+    if ('target_global_id' in c) {
+      const add = convAdditions.find(a => a.gid === c.target_global_id);
+      targetLabel = add ? add.label : `gid:${c.target_global_id}`;
+    } else {
+      targetLabel = c.target_notable;
+    }
+    return `${node ? node.name : c.node_id} → ${targetLabel}`;
   }).join(' | ');
 
   countEl.textContent = `${data.count} seed${data.count !== 1 ? 's' : ''} found for ${data.jewel_type} · ${data.socket_label}`;

@@ -83,6 +83,12 @@ def passives_for_jewel(jewel_type):
     return jsonify(loader.get_replacement_notables_for_jewel(jewel_type))
 
 
+@app.route('/timeless/api/additions/<int:jewel_type>')
+@requires_auth
+def additions_for_jewel(jewel_type):
+    return jsonify(loader.get_additions_for_jewel(jewel_type))
+
+
 @app.route('/timeless/api/sockets')
 @requires_auth
 def sockets():
