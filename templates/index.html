@@ -407,7 +407,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Jewel Type</label>
-          <select id="n-jewel-type">
+          <select id="n-jewel-type" onchange="onNotableJewelChange()">
             {% for jt in jewel_types %}
             {% if jt.id != 1 %}
             <option value="{{ jt.id }}"
@@ -568,7 +568,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => {
     el.classList.toggle('active', el.id === 'tab-' + name);
   });
-  if (name === 'notable' && allPassives.length === 0) loadPassives();
+  if (name === 'notable') loadPassives();
   if (name === 'conversion' && allSockets.length === 0) loadSockets();
 }
 
@@ -590,8 +590,9 @@ function setStatus(el, msg, type) {
 
 // ─── Load shared data ──────────────────────────────────────────────────────────
 async function loadPassives() {
+  const jewel_type = parseInt(document.getElementById('n-jewel-type').value);
   try {
-    const res = await fetch('/timeless/api/passives');
+    const res = await fetch(`/timeless/api/passives/${jewel_type}`);
     allPassives = await res.json();
     const dl = document.getElementById('n-notable-list');
     dl.innerHTML = allPassives.map(p => `<option value="${escHtml(p.name)}">`).join('');
@@ -777,6 +778,12 @@ seedInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); 
 // ─── TAB 2: NOTABLE SEARCH ─────────────────────────────────────────────────────
 const nSearchBtn = document.getElementById('n-search-btn');
 const statusEl2 = document.getElementById('status2');
+
+function onNotableJewelChange() {
+  document.getElementById('n-notable-input').value = '';
+  document.getElementById('n-results-panel').style.display = 'none';
+  loadPassives();
+}
 
 async function doNotableSearch() {
   const jewel_type = parseInt(document.getElementById('n-jewel-type').value);

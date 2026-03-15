@@ -140,11 +140,14 @@ class DataLoader:
                 id_m = id_pattern.search(block)
                 sd_m = re.search(r'\["sd"\]\s*=\s*\{([^}]*)\}', block, re.DOTALL)
                 sd_list = re.findall(r'"([^"]*)"', sd_m.group(1)) if sd_m else []
+                ks_m = re.search(r'\["ks"\]\s*=\s*(true|false)', block)
+                is_keystone = bool(ks_m and ks_m.group(1) == 'true')
                 entries.append({
                     "idx": idx,
                     "dn": dn_m.group(1) if dn_m else "Unknown",
                     "id": id_m.group(1) if id_m else "",
                     "sd": sd_list,
+                    "is_keystone": is_keystone,
                 })
                 pos = end + 1
 
@@ -537,19 +540,20 @@ class DataLoader:
         return {"results": results, "jewel_type": jt['name'], "seed": seed}
 
     def get_all_replacement_notables(self):
-        """Returns sorted list of all replacement notable names with stats."""
+        """Returns sorted list of all replacement notable names with stats (no keystones)."""
         return [
             {'name': p['dn'], 'sd': p.get('sd', [])}
             for p in sorted(self.passives, key=lambda p: p['dn'])
+            if not p.get('is_keystone', False)
         ]
 
     def get_replacement_notables_for_jewel(self, jewel_type):
-        """Returns replacement notables reachable by the given jewel type, sorted by name."""
+        """Returns replacement notables (no keystones) reachable by the given jewel type, sorted by name."""
         l2g = self.local_to_global.get(jewel_type, {})
         valid_global_ids = {gid for gid in l2g.values() if gid >= TIMELESS_JEWEL_ADDITIONS}
         result = []
         for i, p in enumerate(self.passives):
-            if (TIMELESS_JEWEL_ADDITIONS + i) in valid_global_ids:
+            if (TIMELESS_JEWEL_ADDITIONS + i) in valid_global_ids and not p.get('is_keystone', False):
                 result.append({'name': p['dn'], 'sd': p.get('sd', [])})
         return sorted(result, key=lambda p: p['name'])
 
