@@ -71,5 +71,45 @@ def jewel_types():
     ])
 
 
+@app.route('/timeless/api/passives')
+@requires_auth
+def passives():
+    return jsonify(loader.get_all_replacement_notables())
+
+
+@app.route('/timeless/api/sockets')
+@requires_auth
+def sockets():
+    return jsonify(loader.get_all_sockets())
+
+
+@app.route('/timeless/api/socket_nodes/<int:socket_id>')
+@requires_auth
+def socket_nodes(socket_id):
+    return jsonify(loader.get_socket_notable_nodes(socket_id))
+
+
+@app.route('/timeless/api/search_notable', methods=['POST'])
+@requires_auth
+def search_notable():
+    data = request.get_json()
+    jewel_type = int(data.get('jewel_type', 0))
+    notable_name = data.get('notable_name', '')
+    min_count = max(2, min(5, int(data.get('min_count', 2))))
+    result = loader.search_notable(jewel_type, notable_name, min_count)
+    return jsonify(result)
+
+
+@app.route('/timeless/api/search_conversion', methods=['POST'])
+@requires_auth
+def search_conversion():
+    data = request.get_json()
+    jewel_type = int(data.get('jewel_type', 0))
+    socket_id = int(data.get('socket_id', 0))
+    conversions = data.get('conversions', [])
+    result = loader.search_conversion(jewel_type, socket_id, conversions)
+    return jsonify(result)
+
+
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=3122)

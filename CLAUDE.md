@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Running the App
 
 ```bash
-pip install flask
+pip install -r requirements.txt
 AUTH_USERNAME=admin AUTH_PASSWORD=yourpassword python app.py
 # Open http://localhost:3122/timeless/
 ```
@@ -19,6 +19,19 @@ See the **Deployment** section at the bottom of this file for instructions on de
 ## Architecture
 
 Flask web app (`app.py`) backed by `data_loader.py`, serving a single-page HTML UI (`templates/index.html`).
+
+### API Endpoints
+
+All endpoints require HTTP Basic Auth.
+
+| Method | Path | Body / Params | Description |
+|--------|------|--------------|-------------|
+| GET | `/timeless/` | — | Renders the UI |
+| GET | `/timeless/api/jewel_types` | — | Returns list of supported jewel types with seed ranges |
+| POST | `/timeless/api/search` | `{"jewel_type": int, "seed": int}` | Returns sockets with duplicate notables |
+| POST | `/timeless/api/parse_item` | `{"item_text": string}` | Parses a PoE item tooltip paste, extracts jewel type + seed |
+
+`DataLoader` is instantiated once at startup (`app.py` module level); data loads into memory on server start (~3s), searches are instant thereafter.
 
 ### Data Sources
 
@@ -130,8 +143,8 @@ cd -
 
 # 5. Point app at your PoB data path (edit data_loader.py if not /opt/PathOfBuilding)
 #    Default paths in data_loader.py:
-#      POB_DATA = "/home/cc/codewithclaude/PathOfBuilding/src/Data/TimelessJewelData"
-#      POB_TREE = "/home/cc/codewithclaude/PathOfBuilding/src/TreeData/3_25"
+#      POB_DATA = "/opt/PathOfBuilding/src/Data/TimelessJewelData"
+#      POB_TREE = "/opt/PathOfBuilding/src/TreeData/3_25"
 #    Change these two constants to match your install path.
 
 # 6. Set credentials and run
@@ -182,5 +195,5 @@ server {
 ### Notes
 - Python 3.8+ required (uses `zlib`, `math`, `re` — all stdlib except Flask)
 - ~500 MB RAM at runtime (decompressed LUT data cached in memory)
-- First request after startup is slow (~3s) due to data loading; subsequent searches are instant
+- Data loads at process startup (~3s); subsequent searches are instant
 - The `POB_DATA` and `POB_TREE` paths in `data_loader.py` must be updated if PoB is not at the default location

@@ -24,31 +24,47 @@
     gap: 12px;
   }
 
-  header h1 {
-    font-size: 22px;
-    color: #c8a44a;
-    letter-spacing: 1px;
-    text-shadow: 0 0 8px #c8a44a55;
+  header h1 { font-size: 22px; color: #c8a44a; letter-spacing: 1px; text-shadow: 0 0 8px #c8a44a55; }
+  header span.subtitle { color: #806840; font-size: 13px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+    border-bottom: 2px solid #3a2a10;
   }
 
-  header span.subtitle {
+  .tab-btn {
+    background: #161616;
+    border: 1px solid #3a2a10;
+    border-bottom: none;
     color: #806840;
+    padding: 10px 20px;
+    cursor: pointer;
     font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    border-radius: 5px 5px 0 0;
+    transition: all 0.2s;
   }
+  .tab-btn:hover { background: #1c1a10; color: #c8b87a; }
+  .tab-btn.active { background: #111; border-color: #7a5a20; color: #c8a44a; border-bottom: 2px solid #111; margin-bottom: -2px; }
 
-  .container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 20px;
-  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
+  /* Panels */
   .panel {
     background: #111;
     border: 1px solid #3a2a10;
-    border-radius: 6px;
+    border-radius: 0 6px 6px 6px;
     padding: 20px;
     margin-bottom: 20px;
   }
+  .panel:first-child { border-top-left-radius: 0; }
 
   .panel-title {
     color: #c8a44a;
@@ -61,27 +77,12 @@
     border-bottom: 1px solid #2a2010;
   }
 
-  .form-row {
-    display: flex;
-    gap: 12px;
-    align-items: flex-end;
-    flex-wrap: wrap;
-  }
+  .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
 
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  label { color: #806840; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-  label {
-    color: #806840;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  select, input[type=number] {
+  select, input[type=number], input[type=text] {
     background: #1a1a1a;
     border: 1px solid #4a3a20;
     color: #c8b87a;
@@ -91,13 +92,11 @@
     outline: none;
     transition: border-color 0.2s;
   }
-
-  select:focus, input[type=number]:focus {
-    border-color: #c8a44a;
-  }
+  select:focus, input[type=number]:focus, input[type=text]:focus { border-color: #c8a44a; }
 
   select { min-width: 180px; }
   input[type=number] { width: 130px; }
+  input[type=text] { min-width: 260px; }
 
   .btn {
     background: linear-gradient(135deg, #5a3a10, #7a5a20);
@@ -112,33 +111,14 @@
     transition: all 0.2s;
     white-space: nowrap;
   }
+  .btn:hover { background: linear-gradient(135deg, #7a5a20, #9a7a30); color: #fff; box-shadow: 0 0 8px #c8a44a55; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-danger { background: linear-gradient(135deg, #4a1010, #6a2020); border-color: #cc5555; }
+  .btn-danger:hover { background: linear-gradient(135deg, #6a2020, #8a3030); }
 
-  .btn:hover {
-    background: linear-gradient(135deg, #7a5a20, #9a7a30);
-    color: #fff;
-    box-shadow: 0 0 8px #c8a44a55;
-  }
-
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #4a3a20;
-    font-size: 12px;
-    margin: 14px 0;
-  }
-
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #2a2010;
-  }
+  .divider { display: flex; align-items: center; gap: 10px; color: #4a3a20; font-size: 12px; margin: 14px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #2a2010; }
 
   textarea {
     width: 100%;
@@ -152,31 +132,16 @@
     resize: vertical;
     outline: none;
   }
-
   textarea:focus { border-color: #c8a44a; }
 
-  .paste-row {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-  }
-
+  .paste-row { display: flex; gap: 10px; align-items: flex-start; }
   .paste-row textarea { flex: 1; min-height: 80px; }
 
   /* Results */
-  #results-panel { display: none; }
+  .results-panel { display: none; }
 
-  .results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-
-  .results-count {
-    color: #806840;
-    font-size: 13px;
-  }
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .results-count { color: #806840; font-size: 13px; }
 
   .result-card {
     background: #161616;
@@ -196,20 +161,10 @@
     cursor: pointer;
     user-select: none;
   }
-
   .result-card-header:hover { background: #222010; }
 
-  .socket-label {
-    font-size: 15px;
-    color: #e8c870;
-    font-weight: bold;
-  }
-
-  .socket-meta {
-    color: #606040;
-    font-size: 12px;
-    margin-top: 2px;
-  }
+  .socket-label { font-size: 15px; color: #e8c870; font-weight: bold; }
+  .socket-meta { color: #606040; font-size: 12px; margin-top: 2px; }
 
   .badge {
     background: #5a3a10;
@@ -221,62 +176,69 @@
     font-weight: bold;
     white-space: nowrap;
   }
-
   .badge.high { background: #3a1a00; border-color: #ff8800; color: #ffaa44; }
 
   .result-card-body { padding: 10px 14px; }
 
   .match-row {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     gap: 10px;
     padding: 6px 0;
     border-bottom: 1px solid #1e1c10;
   }
-
   .match-row:last-child { border-bottom: none; }
 
-  .match-count {
-    min-width: 28px;
-    text-align: center;
-    font-size: 18px;
-    font-weight: bold;
-    color: #c8a44a;
-    line-height: 1;
-  }
-
+  .match-count { min-width: 28px; text-align: center; font-size: 18px; font-weight: bold; color: #c8a44a; line-height: 1; flex-shrink: 0; }
   .match-count.high { color: #ff8800; }
 
-  .match-notable {
-    color: #e8d8a0;
-    font-weight: bold;
-    font-size: 14px;
-    min-width: 160px;
-  }
+  .match-notable { color: #e8d8a0; font-weight: bold; font-size: 14px; min-width: 160px; }
+  .match-nodes { color: #706858; font-size: 12px; font-style: italic; flex: 1; line-height: 1.6; }
 
-  .match-nodes {
-    color: #706858;
+  /* Seed tag for Tab 2 results */
+  .seed-tag {
+    display: inline-block;
+    background: #1a1a2a;
+    border: 1px solid #4a4a80;
+    color: #aaaadd;
+    padding: 2px 8px;
+    border-radius: 4px;
     font-size: 12px;
-    font-style: italic;
+    font-weight: bold;
+    margin-right: 4px;
+    cursor: pointer;
+    user-select: all;
+  }
+  .seed-tag:hover { border-color: #c8a44a; color: #c8b87a; }
+
+  /* Seed grid for Tab 3 */
+  .seed-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
   }
 
-  .chevron {
-    color: #806840;
-    transition: transform 0.2s;
-    font-size: 16px;
+  /* Conversion rows in Tab 3 */
+  .conv-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #1e1c10;
+    flex-wrap: wrap;
   }
+  .conv-row:last-child { border-bottom: none; }
+  .conv-node-name { color: #e8d8a0; font-weight: bold; min-width: 180px; }
+  .conv-arrow { color: #806840; font-size: 16px; }
+  .conv-select { min-width: 220px; }
 
+  .chevron { color: #806840; transition: transform 0.2s; font-size: 16px; }
   .result-card.collapsed .result-card-body { display: none; }
   .result-card.collapsed .chevron { transform: rotate(-90deg); }
 
   /* Status */
-  #status {
-    color: #806840;
-    font-size: 13px;
-    margin-top: 10px;
-    min-height: 20px;
-  }
-
+  #status, #status2, #status3 { color: #806840; font-size: 13px; margin-top: 10px; min-height: 20px; }
   .error-msg { color: #cc4444; }
   .success-msg { color: #44aa44; }
 
@@ -291,15 +253,53 @@
     vertical-align: middle;
     margin-right: 6px;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .no-results {
-    color: #606040;
-    text-align: center;
-    padding: 30px;
-    font-style: italic;
+  .no-results { color: #606040; text-align: center; padding: 30px; font-style: italic; }
+
+  /* Tooltips */
+  .tt {
+    position: relative;
+    display: inline;
+    cursor: help;
+    border-bottom: 1px dotted #806840;
   }
+  .tt .tt-box {
+    visibility: hidden;
+    opacity: 0;
+    background: #1a1208;
+    border: 1px solid #c8a44a;
+    color: #c8b87a;
+    padding: 8px 12px;
+    border-radius: 4px;
+    position: absolute;
+    z-index: 200;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 200px;
+    max-width: 320px;
+    font-size: 12px;
+    white-space: normal;
+    line-height: 1.5;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    box-shadow: 0 2px 12px #00000088;
+  }
+  .tt:hover .tt-box { visibility: visible; opacity: 1; }
+  .tt-box::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #c8a44a;
+  }
+
+  /* Node loading state */
+  .loading-nodes { color: #806840; font-style: italic; padding: 10px 0; }
+  .info-note { color: #806840; font-size: 12px; margin-top: 8px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -307,61 +307,234 @@
 <header>
   <div>
     <h1>⧫ Timeless Jewel Finder</h1>
-    <span class="subtitle">Find jewel socket locations with 2+ matching notables</span>
+    <span class="subtitle">Path of Exile timeless jewel socket optimizer</span>
   </div>
 </header>
 
 <div class="container">
 
-  <!-- Search Form -->
-  <div class="panel">
-    <div class="panel-title">Search</div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Jewel Type</label>
-        <select id="jewel-type">
-          {% for jt in jewel_types %}
-          <option value="{{ jt.id }}"
-            data-min="{{ jt.seed_min }}"
-            data-max="{{ jt.seed_max }}"
-            data-step="{{ jt.seed_step }}">
-            {{ jt.name }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Seed</label>
-        <input type="number" id="seed-input" min="100" max="18000" step="1" value="4869" />
-      </div>
-
-      <button class="btn" id="search-btn" onclick="doSearch()">Search</button>
-    </div>
-
-    <div id="status"></div>
-
-    <div class="divider">OR PASTE ITEM</div>
-
-    <div class="paste-row">
-      <textarea id="item-paste" placeholder="Paste item text here (Ctrl+C on item in PoE, then paste)..."></textarea>
-      <button class="btn" onclick="parsePaste()">Parse &amp; Search</button>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('duplicate')">Duplicate Finder</button>
+    <button class="tab-btn" onclick="switchTab('notable')">Notable Search</button>
+    <button class="tab-btn" onclick="switchTab('conversion')">Conversion Finder</button>
   </div>
 
-  <!-- Results -->
-  <div class="panel" id="results-panel">
-    <div class="results-header">
-      <div class="panel-title" style="margin-bottom:0">Results</div>
-      <div class="results-count" id="results-count"></div>
-    </div>
-    <div id="results-list"></div>
-  </div>
+  <!-- ═══════════════════════════════════════════════════ TAB 1: DUPLICATE FINDER -->
+  <div id="tab-duplicate" class="tab-content active">
 
-</div>
+    <div class="panel">
+      <div class="panel-title">Search — Find sockets with 2+ matching notables</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jewel Type</label>
+          <select id="jewel-type">
+            {% for jt in jewel_types %}
+            <option value="{{ jt.id }}"
+              data-min="{{ jt.seed_min }}"
+              data-max="{{ jt.seed_max }}"
+              data-step="{{ jt.seed_step }}">
+              {{ jt.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Seed</label>
+          <input type="number" id="seed-input" min="100" max="18000" step="1" value="4869" />
+        </div>
+
+        <button class="btn" id="search-btn" onclick="doSearch()">Search</button>
+      </div>
+
+      <div id="status"></div>
+
+      <div class="divider">OR PASTE ITEM</div>
+
+      <div class="paste-row">
+        <textarea id="item-paste" placeholder="Paste item text here (Ctrl+C on item in PoE, then paste)..."></textarea>
+        <button class="btn" onclick="parsePaste()">Parse &amp; Search</button>
+      </div>
+    </div>
+
+    <div class="panel results-panel" id="results-panel">
+      <div class="results-header">
+        <div class="panel-title" style="margin-bottom:0">Results</div>
+        <div class="results-count" id="results-count"></div>
+      </div>
+      <div id="results-list"></div>
+    </div>
+
+  </div><!-- end tab-duplicate -->
+
+  <!-- ═══════════════════════════════════════════════════ TAB 2: NOTABLE SEARCH -->
+  <div id="tab-notable" class="tab-content">
+
+    <div class="panel">
+      <div class="panel-title">Notable Search — Find where a specific notable appears most</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jewel Type</label>
+          <select id="n-jewel-type">
+            {% for jt in jewel_types %}
+            {% if jt.id != 1 %}
+            <option value="{{ jt.id }}"
+              data-min="{{ jt.seed_min }}"
+              data-max="{{ jt.seed_max }}"
+              data-step="{{ jt.seed_step }}">
+              {{ jt.name }}
+            </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Notable Name</label>
+          <input type="text" id="n-notable-input" placeholder="Type a replacement notable..." list="n-notable-list" autocomplete="off" />
+          <datalist id="n-notable-list"></datalist>
+        </div>
+
+        <div class="form-group">
+          <label>Min occurrences</label>
+          <select id="n-min-count">
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+            <option value="4">4×</option>
+            <option value="5">5×</option>
+          </select>
+        </div>
+
+        <button class="btn" id="n-search-btn" onclick="doNotableSearch()">Search</button>
+      </div>
+      <div class="info-note">Searches all seeds and all 57 jewel sockets for the selected jewel type. May take a few seconds.</div>
+      <div id="status2"></div>
+    </div>
+
+    <div class="panel results-panel" id="n-results-panel">
+      <div class="results-header">
+        <div class="panel-title" style="margin-bottom:0">Results</div>
+        <div class="results-count" id="n-results-count"></div>
+      </div>
+      <div id="n-results-list"></div>
+    </div>
+
+  </div><!-- end tab-notable -->
+
+  <!-- ═══════════════════════════════════════════════════ TAB 3: CONVERSION FINDER -->
+  <div id="tab-conversion" class="tab-content">
+
+    <div class="panel">
+      <div class="panel-title">Conversion Finder — Find seeds matching specific conversions</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jewel Type</label>
+          <select id="c-jewel-type" onchange="onConvJewelChange()">
+            {% for jt in jewel_types %}
+            {% if jt.id != 1 %}
+            <option value="{{ jt.id }}"
+              data-min="{{ jt.seed_min }}"
+              data-max="{{ jt.seed_max }}"
+              data-step="{{ jt.seed_step }}">
+              {{ jt.name }}
+            </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Jewel Socket</label>
+          <select id="c-socket" onchange="onSocketChange()" style="min-width:260px">
+            <option value="">— select socket —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="c-nodes-section" style="display:none; margin-top:16px;">
+        <div class="panel-title" style="margin-top:0">Notable Nodes in Radius — select which to convert</div>
+        <div id="c-nodes-list"></div>
+        <div class="info-note">Leave target as "— any —" to exclude that node from the constraint.</div>
+      </div>
+
+      <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="btn" id="c-search-btn" onclick="doConversionSearch()" disabled>Find Seeds</button>
+        <div id="status3"></div>
+      </div>
+    </div>
+
+    <div class="panel results-panel" id="c-results-panel">
+      <div class="results-header">
+        <div class="panel-title" style="margin-bottom:0">Matching Seeds</div>
+        <div class="results-count" id="c-results-count"></div>
+      </div>
+      <div id="c-results-list"></div>
+    </div>
+
+  </div><!-- end tab-conversion -->
+
+</div><!-- end container -->
 
 <script>
+// ─── Global state ─────────────────────────────────────────────────────────────
+let allPassives = [];  // [{name, sd}] loaded once
+let allSockets = [];   // [{id, label, keystone}] loaded once
+
+// ─── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['duplicate', 'notable', 'conversion'];
+    b.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.classList.toggle('active', el.id === 'tab-' + name);
+  });
+  if (name === 'notable' && allPassives.length === 0) loadPassives();
+  if (name === 'conversion' && allSockets.length === 0) loadSockets();
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function makeSdTooltip(name, sdLines) {
+  if (!sdLines || sdLines.length === 0) return escHtml(name);
+  const tip = sdLines.map(l => escHtml(l)).join('<br>');
+  return `<span class="tt">${escHtml(name)}<span class="tt-box">${tip}</span></span>`;
+}
+
+function setStatus(el, msg, type) {
+  el.innerHTML = msg;
+  el.className = type === 'error' ? 'error-msg' : type === 'ok' ? 'success-msg' : '';
+}
+
+// ─── Load shared data ──────────────────────────────────────────────────────────
+async function loadPassives() {
+  try {
+    const res = await fetch('/timeless/api/passives');
+    allPassives = await res.json();
+    const dl = document.getElementById('n-notable-list');
+    dl.innerHTML = allPassives.map(p => `<option value="${escHtml(p.name)}">`).join('');
+    // Also populate conversion target dropdowns if already open
+    updateConvTargetDropdowns();
+  } catch(e) { console.error('Failed to load passives', e); }
+}
+
+async function loadSockets() {
+  try {
+    const res = await fetch('/timeless/api/sockets');
+    allSockets = await res.json();
+    const sel = document.getElementById('c-socket');
+    sel.innerHTML = '<option value="">— select socket —</option>' +
+      allSockets.map(s => `<option value="${s.id}">${escHtml(s.label)}</option>`).join('');
+  } catch(e) { console.error('Failed to load sockets', e); }
+}
+
+// ─── TAB 1: DUPLICATE FINDER ───────────────────────────────────────────────────
 const jewelSelect = document.getElementById('jewel-type');
 const seedInput = document.getElementById('seed-input');
 const statusEl = document.getElementById('status');
@@ -376,7 +549,6 @@ function updateSeedConstraints() {
   seedInput.max = max;
   seedInput.step = step;
   seedInput.placeholder = `${min}–${max}`;
-  // Clamp current value
   const v = parseInt(seedInput.value) || min;
   seedInput.value = Math.max(min, Math.min(max, v));
 }
@@ -384,16 +556,10 @@ function updateSeedConstraints() {
 jewelSelect.addEventListener('change', updateSeedConstraints);
 updateSeedConstraints();
 
-function setStatus(msg, type) {
-  statusEl.innerHTML = msg;
-  statusEl.className = type === 'error' ? 'error-msg' : type === 'ok' ? 'success-msg' : '';
-}
-
 async function parsePaste() {
   const text = document.getElementById('item-paste').value.trim();
-  if (!text) { setStatus('Paste item text first.', 'error'); return; }
-
-  setStatus('<span class="spinner"></span>Parsing item...', '');
+  if (!text) { setStatus(statusEl, 'Paste item text first.', 'error'); return; }
+  setStatus(statusEl, '<span class="spinner"></span>Parsing item...', '');
   try {
     const res = await fetch('/timeless/api/parse_item', {
       method: 'POST',
@@ -401,27 +567,20 @@ async function parsePaste() {
       body: JSON.stringify({item_text: text})
     });
     const data = await res.json();
-    if (data.error) { setStatus(data.error, 'error'); return; }
-
-    // Set form values
+    if (data.error) { setStatus(statusEl, data.error, 'error'); return; }
     jewelSelect.value = data.jewel_type;
     updateSeedConstraints();
     seedInput.value = data.seed;
-
-    setStatus(`Parsed: ${data.jewel_type} / seed ${data.seed}`, 'ok');
+    setStatus(statusEl, `Parsed: ${data.jewel_type} / seed ${data.seed}`, 'ok');
     await doSearch();
-  } catch(e) {
-    setStatus('Parse failed: ' + e, 'error');
-  }
+  } catch(e) { setStatus(statusEl, 'Parse failed: ' + e, 'error'); }
 }
 
 async function doSearch() {
   const jewel_type = parseInt(jewelSelect.value);
   const seed = parseInt(seedInput.value);
-
-  setStatus('<span class="spinner"></span>Searching...', '');
+  setStatus(statusEl, '<span class="spinner"></span>Searching...', '');
   searchBtn.disabled = true;
-
   try {
     const res = await fetch('/timeless/api/search', {
       method: 'POST',
@@ -430,14 +589,12 @@ async function doSearch() {
     });
     const data = await res.json();
     searchBtn.disabled = false;
-
-    if (data.error) { setStatus(data.error, 'error'); return; }
-
+    if (data.error) { setStatus(statusEl, data.error, 'error'); return; }
     renderResults(data);
-    setStatus('', '');
+    setStatus(statusEl, '', '');
   } catch(e) {
     searchBtn.disabled = false;
-    setStatus('Search failed: ' + e, 'error');
+    setStatus(statusEl, 'Search failed: ' + e, 'error');
   }
 }
 
@@ -445,7 +602,6 @@ function renderResults(data) {
   const panel = document.getElementById('results-panel');
   const list = document.getElementById('results-list');
   const countEl = document.getElementById('results-count');
-
   panel.style.display = 'block';
 
   const results = data.results || [];
@@ -459,18 +615,22 @@ function renderResults(data) {
   list.innerHTML = results.map((r, i) => {
     const maxCount = Math.max(...r.matches.map(m => m.count));
     const badgeClass = maxCount >= 3 ? 'badge high' : 'badge';
+
     const matches = r.matches.map(m => {
-      const nodeNames = m.nodes.map(n => n.node_name).join(', ');
       const countClass = m.count >= 3 ? 'match-count high' : 'match-count';
+      const notableTip = makeSdTooltip(m.notable, m.notable_sd);
+      const nodeHtml = m.nodes.map(n =>
+        makeSdTooltip(n.node_name, n.node_sd)
+      ).join(', ');
       return `<div class="match-row">
         <div class="${countClass}">${m.count}×</div>
-        <div class="match-notable">${escHtml(m.notable)}</div>
-        <div class="match-nodes">${escHtml(nodeNames)}</div>
+        <div class="match-notable">${notableTip}</div>
+        <div class="match-nodes">${nodeHtml}</div>
       </div>`;
     }).join('');
 
     return `<div class="result-card" id="card-${i}">
-      <div class="result-card-header" onclick="toggleCard(${i})">
+      <div class="result-card-header" onclick="toggleCard('card-${i}')">
         <div>
           <div class="socket-label">${escHtml(r.label)}</div>
           <div class="socket-meta">Socket ID: ${r.socket_id} · ${r.total_notables_in_radius} notables in radius</div>
@@ -485,23 +645,250 @@ function renderResults(data) {
   }).join('');
 }
 
-function toggleCard(i) {
-  const card = document.getElementById('card-' + i);
-  card.classList.toggle('collapsed');
+function toggleCard(id) {
+  document.getElementById(id).classList.toggle('collapsed');
 }
 
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+seedInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+// ─── TAB 2: NOTABLE SEARCH ─────────────────────────────────────────────────────
+const nSearchBtn = document.getElementById('n-search-btn');
+const statusEl2 = document.getElementById('status2');
+
+async function doNotableSearch() {
+  const jewel_type = parseInt(document.getElementById('n-jewel-type').value);
+  const notable_name = document.getElementById('n-notable-input').value.trim();
+  const min_count = parseInt(document.getElementById('n-min-count').value);
+
+  if (!notable_name) { setStatus(statusEl2, 'Enter a notable name.', 'error'); return; }
+
+  setStatus(statusEl2, '<span class="spinner"></span>Searching all seeds and sockets...', '');
+  nSearchBtn.disabled = true;
+
+  try {
+    const res = await fetch('/timeless/api/search_notable', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({jewel_type, notable_name, min_count})
+    });
+    const data = await res.json();
+    nSearchBtn.disabled = false;
+    if (data.error) { setStatus(statusEl2, data.error, 'error'); return; }
+    renderNotableResults(data, min_count);
+    setStatus(statusEl2, '', '');
+  } catch(e) {
+    nSearchBtn.disabled = false;
+    setStatus(statusEl2, 'Search failed: ' + e, 'error');
+  }
 }
 
-// Allow Enter key to trigger search
-seedInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') doSearch();
+function renderNotableResults(data, min_count) {
+  const panel = document.getElementById('n-results-panel');
+  const list = document.getElementById('n-results-list');
+  const countEl = document.getElementById('n-results-count');
+  panel.style.display = 'block';
+
+  const results = data.results || [];
+  const total = data.total || results.length;
+  const truncated = total > results.length ? ` (showing top ${results.length})` : '';
+  countEl.textContent = `${total} result${total !== 1 ? 's' : ''}${truncated} for "${data.notable}" with ${min_count}+ occurrences`;
+
+  if (results.length === 0) {
+    list.innerHTML = `<div class="no-results">No sockets found where "${escHtml(data.notable)}" appears ${min_count}+ times for any seed.</div>`;
+    return;
+  }
+
+  // Group by socket for display
+  const bySocket = {};
+  for (const r of results) {
+    if (!bySocket[r.socket_id]) bySocket[r.socket_id] = { label: r.socket_label, keystone: r.socket_keystone, entries: [] };
+    bySocket[r.socket_id].entries.push(r);
+  }
+
+  list.innerHTML = Object.entries(bySocket).map(([sid, grp], i) => {
+    const maxCount = Math.max(...grp.entries.map(e => e.count));
+    const badgeClass = maxCount >= 3 ? 'badge high' : 'badge';
+    const rows = grp.entries.map(e => {
+      const countClass = e.count >= 3 ? 'match-count high' : 'match-count';
+      const nodeNames = e.nodes.map(n => escHtml(n.node_name)).join(', ');
+      return `<div class="match-row">
+        <div class="${countClass}">${e.count}×</div>
+        <div class="match-notable"><span class="seed-tag" title="Click to copy">${e.seed}</span></div>
+        <div class="match-nodes">${nodeNames}</div>
+      </div>`;
+    }).join('');
+    const cardId = 'ncard-' + i;
+    return `<div class="result-card" id="${cardId}">
+      <div class="result-card-header" onclick="toggleCard('${cardId}')">
+        <div>
+          <div class="socket-label">${escHtml(grp.label)}</div>
+          <div class="socket-meta">${grp.entries.length} matching seed${grp.entries.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="${badgeClass}">max ${maxCount}×</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="result-card-body">${rows}</div>
+    </div>`;
+  }).join('');
+
+  // Seed copy on click
+  list.querySelectorAll('.seed-tag').forEach(el => {
+    el.addEventListener('click', () => {
+      navigator.clipboard.writeText(el.textContent).catch(() => {});
+      const orig = el.textContent;
+      el.textContent = 'Copied!';
+      setTimeout(() => el.textContent = orig, 800);
+    });
+  });
+}
+
+document.getElementById('n-notable-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doNotableSearch();
 });
+
+// ─── TAB 3: CONVERSION FINDER ──────────────────────────────────────────────────
+const statusEl3 = document.getElementById('status3');
+const cSearchBtn = document.getElementById('c-search-btn');
+let convNodes = [];  // Notable nodes for currently selected socket
+
+function onConvJewelChange() {
+  // Clear socket selection and nodes when jewel type changes
+  document.getElementById('c-socket').value = '';
+  document.getElementById('c-nodes-section').style.display = 'none';
+  document.getElementById('c-nodes-list').innerHTML = '';
+  cSearchBtn.disabled = true;
+  document.getElementById('c-results-panel').style.display = 'none';
+}
+
+async function onSocketChange() {
+  const socket_id = document.getElementById('c-socket').value;
+  const nodesSection = document.getElementById('c-nodes-section');
+  const nodesList = document.getElementById('c-nodes-list');
+  cSearchBtn.disabled = true;
+  document.getElementById('c-results-panel').style.display = 'none';
+
+  if (!socket_id) { nodesSection.style.display = 'none'; return; }
+
+  // Ensure passives are loaded for target dropdowns
+  if (allPassives.length === 0) await loadPassives();
+
+  nodesList.innerHTML = '<div class="loading-nodes"><span class="spinner"></span>Loading notable nodes...</div>';
+  nodesSection.style.display = 'block';
+
+  try {
+    const res = await fetch(`/timeless/api/socket_nodes/${socket_id}`);
+    convNodes = await res.json();
+    renderConvNodes();
+    cSearchBtn.disabled = convNodes.length === 0;
+  } catch(e) {
+    nodesList.innerHTML = `<div class="error-msg">Failed to load nodes: ${e}</div>`;
+  }
+}
+
+function renderConvNodes() {
+  const list = document.getElementById('c-nodes-list');
+  if (convNodes.length === 0) {
+    list.innerHTML = '<div class="no-results">No notable nodes in this socket\'s radius.</div>';
+    return;
+  }
+
+  const targetOptions = '<option value="">— any —</option>' +
+    allPassives.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('');
+
+  list.innerHTML = convNodes.map((n, i) => {
+    const sdTip = n.sd && n.sd.length > 0
+      ? `<span class="tt">[?]<span class="tt-box">${n.sd.map(l => escHtml(l)).join('<br>')}</span></span>`
+      : '';
+    return `<div class="conv-row">
+      <div class="conv-node-name">${escHtml(n.name)} ${sdTip}</div>
+      <div class="conv-arrow">→</div>
+      <select class="conv-select" data-node-id="${n.node_id}" id="conv-target-${i}">${targetOptions}</select>
+    </div>`;
+  }).join('');
+}
+
+function updateConvTargetDropdowns() {
+  // Called when passives load but nodes are already shown
+  if (convNodes.length > 0) renderConvNodes();
+}
+
+async function doConversionSearch() {
+  const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
+  const socket_id = parseInt(document.getElementById('c-socket').value);
+
+  // Collect conversions where a target is selected
+  const conversions = [];
+  document.querySelectorAll('.conv-select').forEach(sel => {
+    if (sel.value) {
+      conversions.push({ node_id: parseInt(sel.dataset.nodeId), target_notable: sel.value });
+    }
+  });
+
+  if (conversions.length === 0) {
+    setStatus(statusEl3, 'Select at least one target conversion.', 'error');
+    return;
+  }
+
+  setStatus(statusEl3, '<span class="spinner"></span>Searching...', '');
+  cSearchBtn.disabled = true;
+
+  try {
+    const res = await fetch('/timeless/api/search_conversion', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({jewel_type, socket_id, conversions})
+    });
+    const data = await res.json();
+    cSearchBtn.disabled = false;
+
+    if (data.error) { setStatus(statusEl3, data.error, 'error'); return; }
+    renderConvResults(data, conversions);
+    setStatus(statusEl3, '', '');
+  } catch(e) {
+    cSearchBtn.disabled = false;
+    setStatus(statusEl3, 'Search failed: ' + e, 'error');
+  }
+}
+
+function renderConvResults(data, conversions) {
+  const panel = document.getElementById('c-results-panel');
+  const list = document.getElementById('c-results-list');
+  const countEl = document.getElementById('c-results-count');
+  panel.style.display = 'block';
+
+  const seeds = data.seeds || [];
+  const constraintDesc = conversions.map(c => {
+    const node = convNodes.find(n => n.node_id === c.node_id);
+    return `${node ? node.name : c.node_id} → ${c.target_notable}`;
+  }).join(' | ');
+
+  countEl.textContent = `${data.count} seed${data.count !== 1 ? 's' : ''} found for ${data.jewel_type} · ${data.socket_label}`;
+
+  if (seeds.length === 0) {
+    list.innerHTML = `<div class="no-results">No seeds satisfy all constraints: ${escHtml(constraintDesc)}</div>`;
+    return;
+  }
+
+  const seedTags = seeds.map(s =>
+    `<span class="seed-tag" title="Click to copy">${s}</span>`
+  ).join('');
+
+  list.innerHTML = `
+    <div style="color:#806840; font-size:12px; margin-bottom:10px;">${escHtml(constraintDesc)}</div>
+    <div class="seed-grid">${seedTags}</div>
+  `;
+
+  list.querySelectorAll('.seed-tag').forEach(el => {
+    el.addEventListener('click', () => {
+      navigator.clipboard.writeText(el.textContent).catch(() => {});
+      const orig = el.textContent;
+      el.textContent = 'Copied!';
+      setTimeout(() => el.textContent = orig, 800);
+    });
+  });
+}
 </script>
 </body>
 </html>

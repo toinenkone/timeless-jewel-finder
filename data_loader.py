@@ -138,10 +138,13 @@ class DataLoader:
                 block = text[m.start():end + 1]
                 dn_m = dn_pattern.search(block)
                 id_m = id_pattern.search(block)
+                sd_m = re.search(r'\["sd"\]\s*=\s*\{([^}]*)\}', block, re.DOTALL)
+                sd_list = re.findall(r'"([^"]*)"', sd_m.group(1)) if sd_m else []
                 entries.append({
                     "idx": idx,
                     "dn": dn_m.group(1) if dn_m else "Unknown",
                     "id": id_m.group(1) if id_m else "",
+                    "sd": sd_list,
                 })
                 pos = end + 1
 
@@ -165,6 +168,9 @@ class DataLoader:
         current_id = None
         current_obj = None
         depth_stack = []
+        in_stats = False
+        stats_data = []
+        stats_indent = 0
 
         # Regex patterns
         re_groups_start = re.compile(r'^\s{4}\["groups"\]=\s*\{')
@@ -214,12 +220,42 @@ class DataLoader:
                         current_obj[m2.group(1)] = float(m2.group(2))
 
             elif section == 'nodes':
+                # Handle stats array content
+                if in_stats:
+                    m_close = re.match(r'^(\s+)\},?$', stripped)
+                    if m_close and len(m_close.group(1)) <= stats_indent:
+                        in_stats = False
+                        if current_obj is not None:
+                            current_obj['stats'] = stats_data[:]
+                    else:
+                        m_item = re.match(r'^\s+"([^"]*)",?$', stripped)
+                        if m_item:
+                            stats_data.append(m_item.group(1))
+                    continue
+
                 m = re_entry.match(stripped)
                 if m:
+                    in_stats = False
                     current_id = int(m.group(1))
                     current_obj = {'id': current_id}
                     raw_nodes[current_id] = current_obj
                     continue
+
+                if current_obj is not None:
+                    # Single-line stats: ["stats"]= {},
+                    m_stats_inline = re.match(r'^(\s+)\["stats"\]=\s*\{([^}]*)\},?$', stripped)
+                    if m_stats_inline:
+                        items = re.findall(r'"([^"]*)"', m_stats_inline.group(2))
+                        if items:
+                            current_obj['stats'] = items
+                        continue
+                    # Multi-line stats: ["stats"]= {
+                    m_stats_start = re.match(r'^(\s+)\["stats"\]=\s*\{$', stripped)
+                    if m_stats_start:
+                        in_stats = True
+                        stats_indent = len(m_stats_start.group(1))
+                        stats_data = []
+                        continue
 
                 if current_obj is not None:
                     # String field
@@ -278,6 +314,7 @@ class DataLoader:
                 'is_jewel_socket': node.get('isJewelSocket', False),
                 'is_notable': node.get('isNotable', False),
                 'is_keystone': node.get('isKeystone', False),
+                'stats': node.get('stats', []),
             }
 
         # Build jewel sockets with their nearby notable nodes
@@ -403,6 +440,21 @@ class DataLoader:
         global_id = self._convert_local_to_global(jewel_type, local_id)
         return global_id
 
+    def _global_id_info(self, global_id):
+        """Returns (name, sd, is_replacement) for a global_id."""
+        if global_id is None:
+            return None, [], False
+        if global_id >= TIMELESS_JEWEL_ADDITIONS:
+            passive_idx = global_id - TIMELESS_JEWEL_ADDITIONS
+            if passive_idx < len(self.passives):
+                p = self.passives[passive_idx]
+                return p['dn'], p.get('sd', []), True
+        else:
+            if global_id < len(self.additions):
+                a = self.additions[global_id]
+                return a['dn'], a.get('sd', []), False
+        return None, [], False
+
     def global_id_to_name(self, global_id):
         """Convert global_id to (name, is_replacement) tuple."""
         if global_id is None:
@@ -446,14 +498,19 @@ class DataLoader:
 
             # For each notable node, get what it becomes
             by_name = defaultdict(list)
+            by_name_sd = {}
             for nid in notable_nodes:
                 global_id = self.read_lut(seed, nid, jewel_type)
-                name, is_replacement = self.global_id_to_name(global_id)
+                name, sd, is_replacement = self._global_id_info(global_id)
                 if name and is_replacement:
+                    node = self.tree_nodes[nid]
                     by_name[name].append({
                         'node_id': nid,
-                        'node_name': self.tree_nodes[nid]['name'],
+                        'node_name': node['name'],
+                        'node_sd': node.get('stats', []),
                     })
+                    if name not in by_name_sd:
+                        by_name_sd[name] = sd
 
             # Find cases with 2+ occurrences
             matches = []
@@ -461,6 +518,7 @@ class DataLoader:
                 if len(nodes) >= 2:
                     matches.append({
                         'notable': notable_name,
+                        'notable_sd': by_name_sd.get(notable_name, []),
                         'count': len(nodes),
                         'nodes': nodes,
                     })
@@ -477,6 +535,174 @@ class DataLoader:
 
         results.sort(key=lambda r: -max(m['count'] for m in r['matches']))
         return {"results": results, "jewel_type": jt['name'], "seed": seed}
+
+    def get_all_replacement_notables(self):
+        """Returns sorted list of all replacement notable names with stats."""
+        return [
+            {'name': p['dn'], 'sd': p.get('sd', [])}
+            for p in sorted(self.passives, key=lambda p: p['dn'])
+        ]
+
+    def get_all_sockets(self):
+        """Returns list of all jewel socket info sorted by label."""
+        return sorted([
+            {'id': sid, 'label': s['label'], 'keystone': s['keystone']}
+            for sid, s in self.jewel_sockets.items()
+        ], key=lambda s: s['label'])
+
+    def get_socket_notable_nodes(self, socket_id):
+        """Returns notable nodes for a socket with names and stats."""
+        socket = self.jewel_sockets.get(int(socket_id))
+        if socket is None:
+            return []
+        nodes = []
+        for nid in socket['notable_nodes']:
+            node = self.tree_nodes.get(nid)
+            if node is None:
+                continue
+            nodes.append({
+                'node_id': nid,
+                'name': node['name'],
+                'sd': node.get('stats', []),
+            })
+        nodes.sort(key=lambda n: n['name'])
+        return nodes
+
+    def search_notable(self, jewel_type, notable_name, min_count):
+        """Find sockets and seeds where notable_name appears at least min_count times."""
+        if jewel_type not in JEWEL_TYPES or jewel_type == 1:
+            return {"error": "Invalid or unsupported jewel type"}
+
+        target_global_ids = {
+            TIMELESS_JEWEL_ADDITIONS + i
+            for i, p in enumerate(self.passives)
+            if p['dn'].lower() == notable_name.lower()
+        }
+        if not target_global_ids:
+            return {"error": f"Notable '{notable_name}' not found"}
+
+        l2g = self.local_to_global.get(jewel_type, {})
+        target_local_ids = frozenset(lid for lid, gid in l2g.items() if gid in target_global_ids)
+        if not target_local_ids:
+            return {"results": [], "notable": notable_name, "total": 0}
+
+        lut_data = self._load_lut(jewel_type)
+        seed_min = LUT_SEED_MIN[jewel_type]
+        seed_max = LUT_SEED_MAX[jewel_type]
+        seed_size = seed_max - seed_min + 1
+
+        # Collect all unique notable nodes across all sockets
+        all_notable_nodes = set()
+        for socket in self.jewel_sockets.values():
+            all_notable_nodes.update(socket['notable_nodes'])
+
+        # For each unique node, find seed offsets that produce the target notable
+        node_hits = {}
+        for nid in all_notable_nodes:
+            entry = self.node_index_map.get(nid)
+            if entry is None:
+                continue
+            idx = entry['index']
+            col_start = idx * seed_size
+            col_end = col_start + seed_size
+            if col_end > len(lut_data):
+                continue
+            col = lut_data[col_start:col_end]
+            hits = frozenset(i for i, b in enumerate(col) if b in target_local_ids)
+            if hits:
+                node_hits[nid] = hits
+
+        results = []
+        for socket_id, socket in self.jewel_sockets.items():
+            seed_count = defaultdict(int)
+            seed_nodes = defaultdict(list)
+            for nid in socket['notable_nodes']:
+                if nid in node_hits:
+                    for so in node_hits[nid]:
+                        seed_count[so] += 1
+                        seed_nodes[so].append(nid)
+
+            for so, count in seed_count.items():
+                if count >= min_count:
+                    actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
+                    results.append({
+                        'socket_id': socket_id,
+                        'socket_label': socket['label'],
+                        'socket_keystone': socket['keystone'],
+                        'seed': actual_seed,
+                        'count': count,
+                        'nodes': [
+                            {'node_id': nid, 'node_name': self.tree_nodes[nid]['name']}
+                            for nid in seed_nodes[so]
+                        ],
+                    })
+
+        results.sort(key=lambda r: (-r['count'], r['seed']))
+        total = len(results)
+        return {"results": results[:300], "notable": notable_name, "total": total}
+
+    def search_conversion(self, jewel_type, socket_id, conversions):
+        """Find seeds where all specified node→target conversions happen in a socket."""
+        if jewel_type not in JEWEL_TYPES or jewel_type == 1:
+            return {"error": "Invalid or unsupported jewel type"}
+
+        socket = self.jewel_sockets.get(int(socket_id))
+        if socket is None:
+            return {"error": "Invalid socket ID"}
+
+        if not conversions:
+            return {"error": "No conversions specified"}
+
+        lut_data = self._load_lut(jewel_type)
+        l2g = self.local_to_global.get(jewel_type, {})
+        seed_min = LUT_SEED_MIN[jewel_type]
+        seed_max = LUT_SEED_MAX[jewel_type]
+        seed_size = seed_max - seed_min + 1
+
+        matching_sets = []
+        for conv in conversions:
+            node_id = int(conv['node_id'])
+            target_name = conv['target_notable']
+
+            target_global_ids = {
+                TIMELESS_JEWEL_ADDITIONS + i
+                for i, p in enumerate(self.passives)
+                if p['dn'] == target_name
+            }
+            if not target_global_ids:
+                return {"error": f"Target notable '{target_name}' not found"}
+
+            target_local_ids = frozenset(lid for lid, gid in l2g.items() if gid in target_global_ids)
+
+            entry = self.node_index_map.get(node_id)
+            if entry is None:
+                return {"error": f"Node {node_id} not in LUT"}
+
+            idx = entry['index']
+            col_start = idx * seed_size
+            col_end = col_start + seed_size
+            if col_end > len(lut_data):
+                return {"error": f"LUT index out of bounds for node {node_id}"}
+
+            col = lut_data[col_start:col_end]
+            hits = frozenset(i for i, b in enumerate(col) if b in target_local_ids)
+            matching_sets.append(hits)
+
+        matching = matching_sets[0]
+        for s in matching_sets[1:]:
+            matching = matching & s
+
+        seeds = []
+        for so in sorted(matching):
+            actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
+            seeds.append(actual_seed)
+
+        return {
+            "seeds": seeds,
+            "count": len(seeds),
+            "socket_label": socket['label'],
+            "jewel_type": JEWEL_TYPES[jewel_type]['name'],
+        }
 
     def parse_item_text(self, text):
         """Parse a PoE item text paste and extract jewel type and seed."""
