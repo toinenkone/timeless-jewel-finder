@@ -706,7 +706,7 @@ class DataLoader:
         seeds = []
         for so in sorted(matching):
             actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
-            total_notables = 0
+            counts = defaultdict(int)
             for nid in notable_nodes:
                 entry = self.node_index_map.get(nid)
                 if entry is None:
@@ -716,14 +716,19 @@ class DataLoader:
                     local_id = lut_data[byte_pos]
                     global_id = l2g.get(local_id, local_id)
                     if global_id >= TIMELESS_JEWEL_ADDITIONS:
-                        total_notables += 1
-            seeds.append({'seed': actual_seed, 'notable_count': total_notables})
+                        passive_idx = global_id - TIMELESS_JEWEL_ADDITIONS
+                        if passive_idx < len(self.passives):
+                            counts[self.passives[passive_idx]['dn']] += 1
+            notables = sorted(
+                [{'name': n, 'count': c} for n, c in counts.items()],
+                key=lambda x: (-x['count'], x['name'])
+            )
+            seeds.append({'seed': actual_seed, 'notables': notables})
 
         return {
             "seeds": seeds,
             "count": len(seeds),
             "socket_label": socket['label'],
-            "socket_total_notables": len(notable_nodes),
             "jewel_type": JEWEL_TYPES[jewel_type]['name'],
         }
 

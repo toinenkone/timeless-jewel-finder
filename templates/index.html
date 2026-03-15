@@ -211,13 +211,30 @@
   }
   .seed-tag:hover { border-color: #c8a44a; color: #c8b87a; }
 
-  /* Seed grid for Tab 3 */
-  .seed-grid {
+  /* Seed rows for Tab 3 */
+  .conv-seed-row {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px solid #1e1c10;
   }
+  .conv-seed-row:last-child { border-bottom: none; }
+  .conv-seed-num {
+    min-width: 70px;
+    font-weight: bold;
+    color: #aaaadd;
+    background: #1a1a2a;
+    border: 1px solid #4a4a80;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .conv-seed-num:hover { border-color: #c8a44a; color: #c8b87a; }
+  .conv-seed-notables { color: #c8b87a; font-size: 12px; line-height: 1.5; flex: 1; }
 
   /* Conversion rows in Tab 3 */
   .conv-row {
@@ -959,7 +976,6 @@ function renderConvResults(data, conversions) {
   panel.style.display = 'block';
 
   const seeds = data.seeds || [];
-  const totalNotables = data.socket_total_notables || 0;
   const constraintDesc = conversions.map(c => {
     const node = convNodes.find(n => n.node_id === c.node_id);
     return `${node ? node.name : c.node_id} → ${c.target_notable}`;
@@ -972,23 +988,27 @@ function renderConvResults(data, conversions) {
     return;
   }
 
-  const seedTags = seeds.map(s =>
-    `<span class="seed-tag" title="Click to copy seed ${s.seed}">${s.seed} <span style="color:#806840;font-size:10px;">${s.notable_count}/${totalNotables}</span></span>`
-  ).join('');
+  const rows = seeds.map(s => {
+    const notableText = s.notables.map(n =>
+      `${n.count > 1 ? n.count + '× ' : ''}${escHtml(n.name)}`
+    ).join(' · ');
+    return `<div class="conv-seed-row">
+      <span class="conv-seed-num" title="Click to copy">${s.seed}</span>
+      <span class="conv-seed-notables">${notableText}</span>
+    </div>`;
+  }).join('');
 
   list.innerHTML = `
-    <div style="color:#806840; font-size:12px; margin-bottom:6px;">${escHtml(constraintDesc)}</div>
-    <div style="color:#604830; font-size:11px; margin-bottom:10px;">Seed · notables converted / notables in radius</div>
-    <div class="seed-grid">${seedTags}</div>
+    <div style="color:#806840; font-size:12px; margin-bottom:10px;">${escHtml(constraintDesc)}</div>
+    ${rows}
   `;
 
-  list.querySelectorAll('.seed-tag').forEach(el => {
+  list.querySelectorAll('.conv-seed-num').forEach(el => {
     el.addEventListener('click', () => {
-      const seedNum = el.firstChild.textContent.trim();
-      navigator.clipboard.writeText(seedNum).catch(() => {});
-      const orig = el.innerHTML;
+      navigator.clipboard.writeText(el.textContent.trim()).catch(() => {});
+      const orig = el.textContent;
       el.textContent = 'Copied!';
-      setTimeout(() => el.innerHTML = orig, 800);
+      setTimeout(() => el.textContent = orig, 800);
     });
   });
 }
