@@ -148,7 +148,6 @@
     border: 1px solid #2a2010;
     border-radius: 5px;
     margin-bottom: 10px;
-    overflow: hidden;
   }
 
   .result-card-header {
@@ -158,6 +157,7 @@
     padding: 10px 14px;
     background: #1c1a10;
     border-bottom: 1px solid #2a2010;
+    border-radius: 5px 5px 0 0;
     cursor: pointer;
     user-select: none;
   }
@@ -235,6 +235,7 @@
 
   .chevron { color: #806840; transition: transform 0.2s; font-size: 16px; }
   .result-card.collapsed .result-card-body { display: none; }
+  .result-card.collapsed .result-card-header { border-radius: 5px; }
   .result-card.collapsed .chevron { transform: rotate(-90deg); }
 
   /* Status */
@@ -314,7 +315,7 @@
 <div class="container">
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('duplicate')">Duplicate Finder</button>
+    <button class="tab-btn active" onclick="switchTab('duplicate')">Notable Finder</button>
     <button class="tab-btn" onclick="switchTab('notable')">Notable Search</button>
     <button class="tab-btn" onclick="switchTab('conversion')">Conversion Finder</button>
   </div>
@@ -409,7 +410,14 @@
 
         <button class="btn" id="n-search-btn" onclick="doNotableSearch()">Search</button>
       </div>
-      <div class="info-note">Searches all seeds and all 57 jewel sockets for the selected jewel type. May take a few seconds.</div>
+      <div class="form-row" style="margin-top:12px; align-items:center; gap:16px;">
+        <div class="form-group">
+          <label>PoE League (for trade links)</label>
+          <input type="text" id="n-league" placeholder="e.g. Standard, Settlers" value="Standard" style="min-width:200px" />
+        </div>
+        <div class="info-note" style="margin-top:14px;">Seeds open as PoE trade searches. Change the league name to match where you play.</div>
+      </div>
+      <div class="info-note" style="margin-top:8px;">Searches all seeds and all 57 jewel sockets for the selected jewel type. May take a few seconds.</div>
       <div id="status2"></div>
     </div>
 
@@ -482,6 +490,33 @@
 // ─── Global state ─────────────────────────────────────────────────────────────
 let allPassives = [];  // [{name, sd}] loaded once
 let allSockets = [];   // [{id, label, keystone}] loaded once
+
+// ─── PoE Trade stat IDs per jewel type (from LegionTradeIds.lua) ──────────────
+const TRADE_STAT_IDS = {
+  1: ['explicit.pseudo_timeless_jewel_doryani', 'explicit.pseudo_timeless_jewel_xibaqua', 'explicit.pseudo_timeless_jewel_ahuana'],
+  2: ['explicit.pseudo_timeless_jewel_kaom',    'explicit.pseudo_timeless_jewel_rakiata',  'explicit.pseudo_timeless_jewel_akoya'],
+  3: ['explicit.pseudo_timeless_jewel_asenath',  'explicit.pseudo_timeless_jewel_nasima',   'explicit.pseudo_timeless_jewel_balbala'],
+  4: ['explicit.pseudo_timeless_jewel_avarius',  'explicit.pseudo_timeless_jewel_dominus',  'explicit.pseudo_timeless_jewel_maxarius'],
+  5: ['explicit.pseudo_timeless_jewel_cadiro',   'explicit.pseudo_timeless_jewel_victario', 'explicit.pseudo_timeless_jewel_caspiro'],
+  6: ['explicit.pseudo_timeless_jewel_vorana',   'explicit.pseudo_timeless_jewel_uhtred',   'explicit.pseudo_timeless_jewel_medved'],
+};
+
+function makeTradeUrl(jewel_type, seed) {
+  const league = (document.getElementById('n-league').value.trim() || 'Standard');
+  const ids = TRADE_STAT_IDS[jewel_type] || [];
+  const query = {
+    query: {
+      status: { option: 'online' },
+      stats: [{
+        type: 'count',
+        value: { min: 1 },
+        filters: ids.map(id => ({ id, value: { min: seed, max: seed } }))
+      }]
+    },
+    sort: { price: 'asc' }
+  };
+  return `https://www.pathofexile.com/trade/search/${encodeURIComponent(league)}?q=${encodeURIComponent(JSON.stringify(query))}`;
+}
 
 // ─── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(name) {
@@ -674,7 +709,7 @@ async function doNotableSearch() {
     const data = await res.json();
     nSearchBtn.disabled = false;
     if (data.error) { setStatus(statusEl2, data.error, 'error'); return; }
-    renderNotableResults(data, min_count);
+    renderNotableResults(data, min_count, jewel_type);
     setStatus(statusEl2, '', '');
   } catch(e) {
     nSearchBtn.disabled = false;
@@ -682,7 +717,7 @@ async function doNotableSearch() {
   }
 }
 
-function renderNotableResults(data, min_count) {
+function renderNotableResults(data, min_count, jewel_type) {
   const panel = document.getElementById('n-results-panel');
   const list = document.getElementById('n-results-list');
   const countEl = document.getElementById('n-results-count');
@@ -711,9 +746,10 @@ function renderNotableResults(data, min_count) {
     const rows = grp.entries.map(e => {
       const countClass = e.count >= 3 ? 'match-count high' : 'match-count';
       const nodeNames = e.nodes.map(n => escHtml(n.node_name)).join(', ');
+      const tradeUrl = makeTradeUrl(jewel_type, e.seed);
       return `<div class="match-row">
         <div class="${countClass}">${e.count}×</div>
-        <div class="match-notable"><span class="seed-tag" title="Click to copy">${e.seed}</span></div>
+        <div class="match-notable"><a class="seed-tag" href="${escHtml(tradeUrl)}" target="_blank" rel="noopener" title="Open PoE trade search for seed ${e.seed}">${e.seed} ↗</a></div>
         <div class="match-nodes">${nodeNames}</div>
       </div>`;
     }).join('');
@@ -733,15 +769,6 @@ function renderNotableResults(data, min_count) {
     </div>`;
   }).join('');
 
-  // Seed copy on click
-  list.querySelectorAll('.seed-tag').forEach(el => {
-    el.addEventListener('click', () => {
-      navigator.clipboard.writeText(el.textContent).catch(() => {});
-      const orig = el.textContent;
-      el.textContent = 'Copied!';
-      setTimeout(() => el.textContent = orig, 800);
-    });
-  });
 }
 
 document.getElementById('n-notable-input').addEventListener('keydown', e => {
