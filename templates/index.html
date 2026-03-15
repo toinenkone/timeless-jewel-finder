@@ -221,7 +221,7 @@
   }
   .conv-seed-row:last-child { border-bottom: none; }
   .conv-seed-num {
-    min-width: 70px;
+    min-width: 80px;
     font-weight: bold;
     color: #aaaadd;
     background: #1a1a2a;
@@ -229,9 +229,10 @@
     border-radius: 4px;
     padding: 2px 8px;
     font-size: 12px;
-    cursor: pointer;
     flex-shrink: 0;
     text-align: center;
+    text-decoration: none;
+    display: inline-block;
   }
   .conv-seed-num:hover { border-color: #c8a44a; color: #c8b87a; }
   .conv-seed-notables { color: #c8b87a; font-size: 12px; line-height: 1.5; flex: 1; }
@@ -501,8 +502,12 @@
         <div class="info-note">Leave target as "— any —" to exclude that node from the constraint.</div>
       </div>
 
-      <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <div style="margin-top:14px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
         <button class="btn" id="c-search-btn" onclick="doConversionSearch()" disabled>Find Seeds</button>
+        <div class="form-group">
+          <label>PoE League</label>
+          <input type="text" id="c-league" placeholder="e.g. Mirage, Standard" value="Mirage" style="min-width:160px" />
+        </div>
         <div id="status3"></div>
       </div>
     </div>
@@ -536,8 +541,14 @@ const TRADE_STAT_IDS = {
   6: ['explicit.pseudo_timeless_jewel_vorana',   'explicit.pseudo_timeless_jewel_uhtred',   'explicit.pseudo_timeless_jewel_medved'],
 };
 
+function getLeague() {
+  const t2 = document.getElementById('n-league').value.trim();
+  const t3 = document.getElementById('c-league').value.trim();
+  return t2 || t3 || 'Mirage';
+}
+
 function makeTradeUrl(jewel_type, seed) {
-  const league = (document.getElementById('n-league').value.trim() || 'Mirage');
+  const league = getLeague();
   const ids = TRADE_STAT_IDS[jewel_type] || [];
   const query = {
     query: {
@@ -1018,12 +1029,14 @@ function renderConvResults(data, conversions) {
     return;
   }
 
+  const jewel_type = parseInt(document.getElementById('c-jewel-type').value);
   const rows = seeds.map(s => {
     const notableText = s.notables.map(n =>
       `${n.count > 1 ? n.count + '× ' : ''}${escHtml(n.name)}`
     ).join(' · ');
+    const tradeUrl = makeTradeUrl(jewel_type, s.seed);
     return `<div class="conv-seed-row">
-      <span class="conv-seed-num" title="Click to copy">${s.seed}</span>
+      <a class="conv-seed-num" href="${escHtml(tradeUrl)}" target="_blank" rel="noopener" title="Open PoE trade search for seed ${s.seed}">${s.seed} ↗</a>
       <span class="conv-seed-notables">${notableText}</span>
     </div>`;
   }).join('');
@@ -1032,15 +1045,6 @@ function renderConvResults(data, conversions) {
     <div style="color:#806840; font-size:12px; margin-bottom:10px;">${escHtml(constraintDesc)}</div>
     ${rows}
   `;
-
-  list.querySelectorAll('.conv-seed-num').forEach(el => {
-    el.addEventListener('click', () => {
-      navigator.clipboard.writeText(el.textContent.trim()).catch(() => {});
-      const orig = el.textContent;
-      el.textContent = 'Copied!';
-      setTimeout(() => el.textContent = orig, 800);
-    });
-  });
 }
 </script>
 </body>
