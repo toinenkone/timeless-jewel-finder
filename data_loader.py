@@ -754,8 +754,9 @@ class DataLoader:
             "jewel_type": JEWEL_TYPES[jewel_type]['name'],
         }
 
-    def search_notable_in_nodes(self, jewel_type, node_ids, target_global_id, min_count):
-        """Find seeds where target_global_id appears >= min_count times among the given node_ids."""
+    def search_notable_in_nodes(self, jewel_type, node_ids, target_global_id, min_count, socket_id=None):
+        """Find seeds where target_global_id appears >= min_count times among node_ids.
+        Reports all matching nodes in the socket radius, not just the selected ones."""
         if jewel_type not in JEWEL_TYPES or jewel_type == 1:
             return {"error": "Invalid or unsupported jewel type"}
 
@@ -769,8 +770,18 @@ class DataLoader:
         if not target_local_ids:
             return {"results": [], "total": 0}
 
+        # All nodes in socket radius (for full result display)
+        all_scan_ids = node_ids
+        if socket_id is not None:
+            socket = self.jewel_sockets.get(int(socket_id))
+            if socket:
+                all_scan_ids = socket['notable_nodes']
+
+        selected_set = set(node_ids)
+
+        # Scan all socket nodes; track selected hits separately for min_count filter
         node_hits = {}
-        for nid in node_ids:
+        for nid in all_scan_ids:
             entry = self.node_index_map.get(nid)
             if entry is None:
                 continue
@@ -784,21 +795,24 @@ class DataLoader:
             if hits:
                 node_hits[nid] = hits
 
-        seed_count = defaultdict(int)
-        seed_nodes = defaultdict(list)
+        seed_selected_count = defaultdict(int)
+        seed_all_nodes = defaultdict(list)
         for nid, hits in node_hits.items():
             for so in hits:
-                seed_count[so] += 1
-                seed_nodes[so].append(nid)
+                if nid in selected_set:
+                    seed_selected_count[so] += 1
+                seed_all_nodes[so].append(nid)
 
         results = []
-        for so, count in seed_count.items():
-            if count >= min_count:
+        for so, sel_count in seed_selected_count.items():
+            if sel_count >= min_count:
                 actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
+                all_nids = seed_all_nodes[so]
                 results.append({
                     'seed': actual_seed,
-                    'count': count,
-                    'nodes': [self.tree_nodes[nid]['name'] for nid in seed_nodes[so] if nid in self.tree_nodes],
+                    'count': len(all_nids),
+                    'selected_count': sel_count,
+                    'nodes': [self.tree_nodes[nid]['name'] for nid in all_nids if nid in self.tree_nodes],
                 })
 
         results.sort(key=lambda r: (-r['count'], r['seed']))

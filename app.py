@@ -130,6 +130,7 @@ def search_notable_nodes():
     data = request.get_json()
     jewel_type = int(data.get('jewel_type', 0))
     node_ids = [int(n) for n in data.get('node_ids', [])]
+    socket_id = data.get('socket_id')
     min_count = max(1, int(data.get('min_count', 1)))
 
     if 'target_global_id' in data:
@@ -144,7 +145,7 @@ def search_notable_nodes():
         if gid is None:
             return jsonify({"error": f"Notable '{target_name}' not found"})
 
-    result = loader.search_notable_in_nodes(jewel_type, node_ids, gid, min_count)
+    result = loader.search_notable_in_nodes(jewel_type, node_ids, gid, min_count, socket_id=socket_id)
     return jsonify(result)
 
 

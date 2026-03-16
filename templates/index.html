@@ -1251,11 +1251,12 @@ async function doMnSearch() {
   if (node_ids.length === 0) { setStatus(mnStatusEl, 'Select at least one node.', 'error'); return; }
   if (!targetVal) { setStatus(mnStatusEl, 'Select a conversion target.', 'error'); return; }
 
+  const socket_id = parseInt(document.getElementById('mn-socket').value) || null;
   let body;
   if (targetVal.startsWith('__gid__:')) {
-    body = { jewel_type, node_ids, min_count, target_global_id: parseInt(targetVal.slice(8)) };
+    body = { jewel_type, socket_id, node_ids, min_count, target_global_id: parseInt(targetVal.slice(8)) };
   } else {
-    body = { jewel_type, node_ids, min_count, target_notable: targetVal };
+    body = { jewel_type, socket_id, node_ids, min_count, target_notable: targetVal };
   }
 
   setStatus(mnStatusEl, '<span class="spinner"></span>Searching...', '');
@@ -1304,9 +1305,12 @@ function renderMnResults(data, jewel_type, targetVal, min_count) {
   const rows = results.map(r => {
     const tradeUrl = makeTradeUrl(jewel_type, r.seed);
     const nodeList = r.nodes.map(n => escHtml(n)).join(', ');
+    const countLabel = r.count !== r.selected_count
+      ? `<strong>${r.count}×</strong> <span style="color:#806840;font-size:11px;">(${r.selected_count} selected)</span>`
+      : `<strong>${r.count}×</strong>`;
     return `<div class="conv-seed-row">
       <a class="conv-seed-num" href="${escHtml(tradeUrl)}" target="_blank" rel="noopener" title="Open PoE trade for seed ${r.seed}">${r.seed} ↗</a>
-      <span class="conv-seed-notables"><strong>${r.count}×</strong> ${escHtml(targetLabel)} — <span style="color:#706858;font-size:11px;">${nodeList}</span></span>
+      <span class="conv-seed-notables">${countLabel} ${escHtml(targetLabel)} — <span style="color:#706858;font-size:11px;">${nodeList}</span></span>
     </div>`;
   }).join('');
 
