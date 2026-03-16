@@ -7,8 +7,8 @@ import zlib
 import math
 from collections import defaultdict
 
-POB_DATA = "/opt/PathOfBuilding/src/Data/TimelessJewelData"
-POB_TREE = "/opt/PathOfBuilding/src/TreeData/3_25"
+POB_DATA = os.environ.get("POB_DATA", "/opt/PathOfBuilding/src/Data/TimelessJewelData")
+POB_TREE = os.environ.get("POB_TREE", "/opt/PathOfBuilding/src/TreeData/3_25")
 
 JEWEL_TYPES = {
     1: {"name": "Glorious Vanity",  "file": "GloriousVanity",  "seed_min": 100,   "seed_max": 8000,   "seed_step": 1},
