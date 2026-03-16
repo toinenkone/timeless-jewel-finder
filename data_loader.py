@@ -767,11 +767,7 @@ class DataLoader:
         seed_size = seed_max - seed_min + 1
 
         target_local_ids = frozenset(lid for lid, gid in l2g.items() if gid == target_global_id)
-        print(f"[DEBUG] jewel={jewel_type} gid={target_global_id} local_ids={sorted(target_local_ids)} "
-              f"node_ids={node_ids} min_count={min_count} socket_id={socket_id} "
-              f"seed_size={seed_size} lut_len={len(lut_data)}", flush=True)
         if not target_local_ids:
-            print(f"[DEBUG] no local_ids for gid={target_global_id}, returning empty", flush=True)
             return {"results": [], "total": 0}
 
         # Phase 1: scan only selected nodes to find qualifying seeds
@@ -796,8 +792,6 @@ class DataLoader:
                 seed_selected_count[so] += 1
 
         qualifying = frozenset(so for so, c in seed_selected_count.items() if c >= min_count)
-        print(f"[DEBUG] nodes_with_hits={list(selected_hits.keys())} "
-              f"total_seeds_with_any_hit={len(seed_selected_count)} qualifying={len(qualifying)}", flush=True)
         if not qualifying:
             return {"results": [], "total": 0}
 
