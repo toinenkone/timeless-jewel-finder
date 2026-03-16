@@ -1241,7 +1241,7 @@ function mnSelectAll(checked) {
 
 async function doMnSearch() {
   const jewel_type = parseInt(document.getElementById('mn-jewel-type').value);
-  const socket_id = document.getElementById('mn-socket').value;
+  const socket_id = parseInt(document.getElementById('mn-socket').value) || null;
   const min_count = parseInt(document.getElementById('mn-min-count').value);
   const targetVal = document.getElementById('mn-target').value;
 
@@ -1250,8 +1250,6 @@ async function doMnSearch() {
 
   if (node_ids.length === 0) { setStatus(mnStatusEl, 'Select at least one node.', 'error'); return; }
   if (!targetVal) { setStatus(mnStatusEl, 'Select a conversion target.', 'error'); return; }
-
-  const socket_id = parseInt(document.getElementById('mn-socket').value) || null;
   let body;
   if (targetVal.startsWith('__gid__:')) {
     body = { jewel_type, socket_id, node_ids, min_count, target_global_id: parseInt(targetVal.slice(8)) };
