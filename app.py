@@ -123,5 +123,30 @@ def search_conversion():
     return jsonify(result)
 
 
+@app.route('/timeless/api/search_notable_nodes', methods=['POST'])
+@requires_auth
+def search_notable_nodes():
+    from data_loader import TIMELESS_JEWEL_ADDITIONS
+    data = request.get_json()
+    jewel_type = int(data.get('jewel_type', 0))
+    node_ids = [int(n) for n in data.get('node_ids', [])]
+    min_count = max(1, int(data.get('min_count', 1)))
+
+    if 'target_global_id' in data:
+        gid = int(data['target_global_id'])
+    else:
+        target_name = data.get('target_notable', '')
+        gid = None
+        for i, p in enumerate(loader.passives):
+            if p['dn'] == target_name:
+                gid = TIMELESS_JEWEL_ADDITIONS + i
+                break
+        if gid is None:
+            return jsonify({"error": f"Notable '{target_name}' not found"})
+
+    result = loader.search_notable_in_nodes(jewel_type, node_ids, gid, min_count)
+    return jsonify(result)
+
+
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=3122)

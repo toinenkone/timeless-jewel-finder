@@ -754,6 +754,57 @@ class DataLoader:
             "jewel_type": JEWEL_TYPES[jewel_type]['name'],
         }
 
+    def search_notable_in_nodes(self, jewel_type, node_ids, target_global_id, min_count):
+        """Find seeds where target_global_id appears >= min_count times among the given node_ids."""
+        if jewel_type not in JEWEL_TYPES or jewel_type == 1:
+            return {"error": "Invalid or unsupported jewel type"}
+
+        lut_data = self._load_lut(jewel_type)
+        l2g = self.local_to_global.get(jewel_type, {})
+        seed_min = LUT_SEED_MIN[jewel_type]
+        seed_max = LUT_SEED_MAX[jewel_type]
+        seed_size = seed_max - seed_min + 1
+
+        target_local_ids = frozenset(lid for lid, gid in l2g.items() if gid == target_global_id)
+        if not target_local_ids:
+            return {"results": [], "total": 0}
+
+        node_hits = {}
+        for nid in node_ids:
+            entry = self.node_index_map.get(nid)
+            if entry is None:
+                continue
+            idx = entry['index']
+            col_start = idx * seed_size
+            col_end = col_start + seed_size
+            if col_end > len(lut_data):
+                continue
+            col = lut_data[col_start:col_end]
+            hits = frozenset(i for i, b in enumerate(col) if b in target_local_ids)
+            if hits:
+                node_hits[nid] = hits
+
+        seed_count = defaultdict(int)
+        seed_nodes = defaultdict(list)
+        for nid, hits in node_hits.items():
+            for so in hits:
+                seed_count[so] += 1
+                seed_nodes[so].append(nid)
+
+        results = []
+        for so, count in seed_count.items():
+            if count >= min_count:
+                actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
+                results.append({
+                    'seed': actual_seed,
+                    'count': count,
+                    'nodes': [self.tree_nodes[nid]['name'] for nid in seed_nodes[so] if nid in self.tree_nodes],
+                })
+
+        results.sort(key=lambda r: (-r['count'], r['seed']))
+        total = len(results)
+        return {"results": results[:500], "total": total}
+
     def parse_item_text(self, text):
         """Parse a PoE item text paste and extract jewel type and seed."""
         jewel_type = None

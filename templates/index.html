@@ -348,6 +348,7 @@
     <button class="tab-btn active" onclick="switchTab('duplicate')">Notable Finder</button>
     <button class="tab-btn" onclick="switchTab('notable')">Notable Search</button>
     <button class="tab-btn" onclick="switchTab('conversion')">Conversion Finder</button>
+    <button class="tab-btn" onclick="switchTab('targeted')">Targeted Search</button>
   </div>
 
   <!-- ═══════════════════════════════════════════════════ TAB 1: DUPLICATE FINDER -->
@@ -522,6 +523,93 @@
 
   </div><!-- end tab-conversion -->
 
+  <!-- ═══════════════════════════════════════════════════ TAB 4: TARGETED SEARCH -->
+  <div id="tab-targeted" class="tab-content">
+
+    <div class="panel">
+      <div class="panel-title">Targeted Search — Find seeds where a specific conversion appears N+ times among selected nodes</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jewel Type</label>
+          <select id="mn-jewel-type" onchange="onMnJewelChange()">
+            {% for jt in jewel_types %}
+            {% if jt.id != 1 %}
+            <option value="{{ jt.id }}"
+              data-min="{{ jt.seed_min }}"
+              data-max="{{ jt.seed_max }}"
+              data-step="{{ jt.seed_step }}">
+              {{ jt.name }}
+            </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Jewel Socket</label>
+          <select id="mn-socket" onchange="onMnSocketChange()" style="min-width:260px">
+            <option value="">— select socket —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="socket-map-wrap" id="mn-socket-map-wrap">
+        <svg id="mn-socket-map" width="260" height="260" viewBox="0 0 260 260"></svg>
+      </div>
+
+      <div id="mn-nodes-section" style="display:none; margin-top:16px;">
+        <div class="panel-title" style="margin-top:0">Notable Nodes in Radius — check the ones to include</div>
+        <div style="margin-bottom:8px; display:flex; gap:8px;">
+          <button class="btn btn-sm" onclick="mnSelectAll(true)">Select All</button>
+          <button class="btn btn-sm" onclick="mnSelectAll(false)">Deselect All</button>
+        </div>
+        <div id="mn-nodes-list"></div>
+
+        <div class="form-row" style="margin-top:16px; align-items:flex-end; flex-wrap:wrap; gap:12px;">
+          <div class="form-group">
+            <label>Convert to</label>
+            <select id="mn-target" style="min-width:260px">
+              <option value="">— select target —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Min times (N)</label>
+            <select id="mn-min-count">
+              <option value="1">1×</option>
+              <option value="2" selected>2×</option>
+              <option value="3">3×</option>
+              <option value="4">4×</option>
+              <option value="5">5×</option>
+              <option value="6">6×</option>
+              <option value="7">7×</option>
+              <option value="8">8×</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>PoE League</label>
+            <input type="text" id="mn-league" value="Mirage" style="min-width:140px" />
+          </div>
+        </div>
+        <div class="info-note">Select nodes above, choose what they should convert to, and set how many times it must appear.</div>
+      </div>
+
+      <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="btn" id="mn-search-btn" onclick="doMnSearch()" disabled>Find Seeds</button>
+        <div id="mn-status"></div>
+      </div>
+    </div>
+
+    <div class="panel results-panel" id="mn-results-panel">
+      <div class="results-header">
+        <div class="panel-title" style="margin-bottom:0">Matching Seeds</div>
+        <div class="results-count" id="mn-results-count"></div>
+      </div>
+      <div id="mn-results-list"></div>
+    </div>
+
+  </div><!-- end tab-targeted -->
+
 </div><!-- end container -->
 
 <script>
@@ -544,7 +632,8 @@ const TRADE_STAT_IDS = {
 function getLeague() {
   const t2 = document.getElementById('n-league').value.trim();
   const t3 = document.getElementById('c-league').value.trim();
-  return t2 || t3 || 'Mirage';
+  const t4 = document.getElementById('mn-league').value.trim();
+  return t2 || t3 || t4 || 'Mirage';
 }
 
 function makeTradeUrl(jewel_type, seed) {
@@ -574,14 +663,14 @@ function makeTradeUrl(jewel_type, seed) {
 // ─── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    const tabs = ['duplicate', 'notable', 'conversion'];
+    const tabs = ['duplicate', 'notable', 'conversion', 'targeted'];
     b.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.tab-content').forEach(el => {
     el.classList.toggle('active', el.id === 'tab-' + name);
   });
   if (name === 'notable') loadPassives();
-  if (name === 'conversion' && allSockets.length === 0) loadSockets();
+  if ((name === 'conversion' || name === 'targeted') && allSockets.length === 0) loadSockets();
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -631,14 +720,21 @@ async function loadSockets() {
     sel.innerHTML = '<option value="">— select socket —</option>' +
       allSockets.map(s => `<option value="${s.id}">${escHtml(s.label)}</option>`).join('');
     drawSocketMap(null);
+    drawSocketMap(null, 'mn-socket-map', 'mn-socket-map-wrap');
+    const mnSel = document.getElementById('mn-socket');
+    if (mnSel) {
+      mnSel.innerHTML = '<option value="">— select socket —</option>' +
+        allSockets.map(s => `<option value="${s.id}">${escHtml(s.label)}</option>`).join('');
+    }
   } catch(e) { console.error('Failed to load sockets', e); }
 }
 
 // ─── Socket map SVG ────────────────────────────────────────────────────────────
-function drawSocketMap(selectedId) {
+function drawSocketMap(selectedId, svgId='c-socket-map', wrapId='c-socket-map-wrap') {
   if (allSockets.length === 0) return;
-  const wrap = document.getElementById('c-socket-map-wrap');
-  const svg = document.getElementById('c-socket-map');
+  const wrap = document.getElementById(wrapId);
+  const svg = document.getElementById(svgId);
+  if (!wrap || !svg) return;
   wrap.style.display = 'block';
 
   const W = 260, H = 260, PAD = 14;
@@ -1045,6 +1141,176 @@ function renderConvResults(data, conversions) {
     <div style="color:#806840; font-size:12px; margin-bottom:10px;">${escHtml(constraintDesc)}</div>
     ${rows}
   `;
+}
+
+// ─── TAB 4: TARGETED SEARCH ────────────────────────────────────────────────────
+let mnNodes = [];              // nodes for current Tab 4 socket
+let mnPassivesJewelType = 0;   // which jewel type mn passives loaded for
+let mnPassives = [];
+let mnAdditions = [];
+const mnStatusEl = document.getElementById('mn-status');
+const mnSearchBtn = document.getElementById('mn-search-btn');
+
+async function loadMnPassives(jewel_type) {
+  try {
+    const [pRes, aRes] = await Promise.all([
+      fetch(`/timeless/api/passives/${jewel_type}`),
+      fetch(`/timeless/api/additions/${jewel_type}`),
+    ]);
+    mnPassives = await pRes.json();
+    mnAdditions = await aRes.json();
+    mnPassivesJewelType = jewel_type;
+    rebuildMnTargetDropdown();
+  } catch(e) { console.error('Failed to load mn passives', e); }
+}
+
+function rebuildMnTargetDropdown() {
+  const sel = document.getElementById('mn-target');
+  if (!sel) return;
+  const notableOpts = mnPassives.filter(p => !p.is_keystone);
+  const keystoneOpts = mnPassives.filter(p => p.is_keystone);
+  let opts = '<option value="">— select target —</option>';
+  if (mnAdditions.length) opts += `<optgroup label="Stat Bonuses">${mnAdditions.map(a => `<option value="__gid__:${a.gid}">${escHtml(a.label)}</option>`).join('')}</optgroup>`;
+  if (notableOpts.length) opts += `<optgroup label="Notables">${notableOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('')}</optgroup>`;
+  if (keystoneOpts.length) opts += `<optgroup label="Keystones">${keystoneOpts.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.name)}</option>`).join('')}</optgroup>`;
+  sel.innerHTML = opts;
+}
+
+async function onMnJewelChange() {
+  document.getElementById('mn-socket').value = '';
+  document.getElementById('mn-nodes-section').style.display = 'none';
+  document.getElementById('mn-nodes-list').innerHTML = '';
+  document.getElementById('mn-results-panel').style.display = 'none';
+  mnSearchBtn.disabled = true;
+  mnNodes = [];
+  drawSocketMap(null, 'mn-socket-map', 'mn-socket-map-wrap');
+  const jewel_type = parseInt(document.getElementById('mn-jewel-type').value);
+  mnPassives = []; mnAdditions = []; mnPassivesJewelType = 0;
+  await loadMnPassives(jewel_type);
+}
+
+async function onMnSocketChange() {
+  const socket_id = document.getElementById('mn-socket').value;
+  const nodesSection = document.getElementById('mn-nodes-section');
+  const nodesList = document.getElementById('mn-nodes-list');
+  mnSearchBtn.disabled = true;
+  document.getElementById('mn-results-panel').style.display = 'none';
+
+  if (!socket_id) { nodesSection.style.display = 'none'; drawSocketMap(null, 'mn-socket-map', 'mn-socket-map-wrap'); return; }
+
+  drawSocketMap(parseInt(socket_id), 'mn-socket-map', 'mn-socket-map-wrap');
+
+  const jewel_type = parseInt(document.getElementById('mn-jewel-type').value);
+  if (mnPassivesJewelType !== jewel_type) await loadMnPassives(jewel_type);
+
+  nodesList.innerHTML = '<div class="loading-nodes"><span class="spinner"></span>Loading notable nodes...</div>';
+  nodesSection.style.display = 'block';
+
+  try {
+    const res = await fetch(`/timeless/api/socket_nodes/${socket_id}`);
+    mnNodes = await res.json();
+    renderMnNodes();
+    mnSearchBtn.disabled = mnNodes.length === 0;
+  } catch(e) {
+    nodesList.innerHTML = `<div class="error-msg">Failed to load nodes: ${e}</div>`;
+  }
+}
+
+function renderMnNodes() {
+  const list = document.getElementById('mn-nodes-list');
+  if (mnNodes.length === 0) {
+    list.innerHTML = '<div class="no-results">No notable nodes in this socket\'s radius.</div>';
+    return;
+  }
+  list.innerHTML = mnNodes.map((n, i) => {
+    const sdTip = n.sd && n.sd.length > 0
+      ? `<span class="tt">[?]<span class="tt-box">${n.sd.map(l => escHtml(l)).join('<br>')}</span></span>`
+      : '';
+    const ksTag = n.is_keystone ? ' <span style="color:#c8a44a;font-size:10px;border:1px solid #7a5a20;padding:1px 4px;border-radius:3px;">KEYSTONE</span>' : '';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1e1c10;cursor:pointer;">
+      <input type="checkbox" class="mn-node-cb" data-node-id="${n.node_id}" checked style="accent-color:#c8a44a;width:15px;height:15px;flex-shrink:0;">
+      <span style="color:#e8d8a0;font-weight:bold;">${escHtml(n.name)}${ksTag}</span>
+      ${sdTip}
+    </label>`;
+  }).join('');
+}
+
+function mnSelectAll(checked) {
+  document.querySelectorAll('.mn-node-cb').forEach(cb => cb.checked = checked);
+}
+
+async function doMnSearch() {
+  const jewel_type = parseInt(document.getElementById('mn-jewel-type').value);
+  const socket_id = document.getElementById('mn-socket').value;
+  const min_count = parseInt(document.getElementById('mn-min-count').value);
+  const targetVal = document.getElementById('mn-target').value;
+
+  const node_ids = [];
+  document.querySelectorAll('.mn-node-cb:checked').forEach(cb => node_ids.push(parseInt(cb.dataset.nodeId)));
+
+  if (node_ids.length === 0) { setStatus(mnStatusEl, 'Select at least one node.', 'error'); return; }
+  if (!targetVal) { setStatus(mnStatusEl, 'Select a conversion target.', 'error'); return; }
+
+  let body;
+  if (targetVal.startsWith('__gid__:')) {
+    body = { jewel_type, node_ids, min_count, target_global_id: parseInt(targetVal.slice(8)) };
+  } else {
+    body = { jewel_type, node_ids, min_count, target_notable: targetVal };
+  }
+
+  setStatus(mnStatusEl, '<span class="spinner"></span>Searching...', '');
+  mnSearchBtn.disabled = true;
+
+  try {
+    const res = await fetch('/timeless/api/search_notable_nodes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    mnSearchBtn.disabled = false;
+    if (data.error) { setStatus(mnStatusEl, data.error, 'error'); return; }
+    renderMnResults(data, jewel_type, targetVal, min_count);
+    setStatus(mnStatusEl, '', '');
+  } catch(e) {
+    mnSearchBtn.disabled = false;
+    setStatus(mnStatusEl, 'Search failed: ' + e, 'error');
+  }
+}
+
+function renderMnResults(data, jewel_type, targetVal, min_count) {
+  const panel = document.getElementById('mn-results-panel');
+  const list = document.getElementById('mn-results-list');
+  const countEl = document.getElementById('mn-results-count');
+  panel.style.display = 'block';
+
+  const results = data.results || [];
+  const truncated = data.total > results.length ? ` (showing top ${results.length})` : '';
+  countEl.textContent = `${data.total} seed${data.total !== 1 ? 's' : ''}${truncated} with ${min_count}+ occurrences`;
+
+  // Resolve target label
+  let targetLabel = targetVal;
+  if (targetVal.startsWith('__gid__:')) {
+    const gid = parseInt(targetVal.slice(8));
+    const add = mnAdditions.find(a => a.gid === gid);
+    targetLabel = add ? add.label : targetVal;
+  }
+
+  if (results.length === 0) {
+    list.innerHTML = `<div class="no-results">No seeds found where "${escHtml(targetLabel)}" appears ${min_count}+ times among the selected nodes.</div>`;
+    return;
+  }
+
+  const rows = results.map(r => {
+    const tradeUrl = makeTradeUrl(jewel_type, r.seed);
+    const nodeList = r.nodes.map(n => escHtml(n)).join(', ');
+    return `<div class="conv-seed-row">
+      <a class="conv-seed-num" href="${escHtml(tradeUrl)}" target="_blank" rel="noopener" title="Open PoE trade for seed ${r.seed}">${r.seed} ↗</a>
+      <span class="conv-seed-notables"><strong>${r.count}×</strong> ${escHtml(targetLabel)} — <span style="color:#706858;font-size:11px;">${nodeList}</span></span>
+    </div>`;
+  }).join('');
+
+  list.innerHTML = rows;
 }
 </script>
 </body>
