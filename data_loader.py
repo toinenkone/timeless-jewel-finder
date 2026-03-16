@@ -770,18 +770,9 @@ class DataLoader:
         if not target_local_ids:
             return {"results": [], "total": 0}
 
-        # All nodes in socket radius (for full result display)
-        all_scan_ids = node_ids
-        if socket_id is not None:
-            socket = self.jewel_sockets.get(int(socket_id))
-            if socket:
-                all_scan_ids = socket['notable_nodes']
-
-        selected_set = set(node_ids)
-
-        # Scan all socket nodes; track selected hits separately for min_count filter
-        node_hits = {}
-        for nid in all_scan_ids:
+        # Phase 1: scan only selected nodes to find qualifying seeds
+        selected_hits = {}
+        for nid in node_ids:
             entry = self.node_index_map.get(nid)
             if entry is None:
                 continue
@@ -793,27 +784,49 @@ class DataLoader:
             col = lut_data[col_start:col_end]
             hits = frozenset(i for i, b in enumerate(col) if b in target_local_ids)
             if hits:
-                node_hits[nid] = hits
+                selected_hits[nid] = hits
 
         seed_selected_count = defaultdict(int)
-        seed_all_nodes = defaultdict(list)
-        for nid, hits in node_hits.items():
+        for nid, hits in selected_hits.items():
             for so in hits:
-                if nid in selected_set:
-                    seed_selected_count[so] += 1
-                seed_all_nodes[so].append(nid)
+                seed_selected_count[so] += 1
+
+        qualifying = frozenset(so for so, c in seed_selected_count.items() if c >= min_count)
+        if not qualifying:
+            return {"results": [], "total": 0}
+
+        # Phase 2: scan all socket nodes for qualifying seeds only (for display)
+        all_scan_ids = node_ids
+        if socket_id is not None:
+            sock = self.jewel_sockets.get(int(socket_id))
+            if sock:
+                all_scan_ids = sock['notable_nodes']
+
+        seed_all_nodes = defaultdict(list)
+        for nid in all_scan_ids:
+            entry = self.node_index_map.get(nid)
+            if entry is None:
+                continue
+            idx = entry['index']
+            col_start = idx * seed_size
+            col_end = col_start + seed_size
+            if col_end > len(lut_data):
+                continue
+            col = lut_data[col_start:col_end]
+            for so in qualifying:
+                if col[so] in target_local_ids:
+                    seed_all_nodes[so].append(nid)
 
         results = []
-        for so, sel_count in seed_selected_count.items():
-            if sel_count >= min_count:
-                actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
-                all_nids = seed_all_nodes[so]
-                results.append({
-                    'seed': actual_seed,
-                    'count': len(all_nids),
-                    'selected_count': sel_count,
-                    'nodes': [self.tree_nodes[nid]['name'] for nid in all_nids if nid in self.tree_nodes],
-                })
+        for so in qualifying:
+            actual_seed = (so + seed_min) * 20 if jewel_type == 5 else so + seed_min
+            all_nids = seed_all_nodes.get(so, [])
+            results.append({
+                'seed': actual_seed,
+                'count': len(all_nids),
+                'selected_count': seed_selected_count[so],
+                'nodes': [self.tree_nodes[nid]['name'] for nid in all_nids if nid in self.tree_nodes],
+            })
 
         results.sort(key=lambda r: (-r['count'], r['seed']))
         total = len(results)
