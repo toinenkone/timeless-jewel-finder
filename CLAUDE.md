@@ -2,6 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Instructions for Claude
+
+- After every `git push`, post the **Deployment Instructions** block below to the user.
+- When the user asks for deployment instructions, post the **Deployment Instructions** block below.
+
+## Deployment Instructions
+
+After pushing new code, share this with the user:
+
+```
+### Deploy latest code on the server
+
+ssh into the server and run:
+
+cd /home/cc/code/timeless-jewel-finder
+git pull
+sudo systemctl restart jewel-finder
+
+Check it's running:
+sudo systemctl status jewel-finder
+```
+
 ## Running the App
 
 ```bash
