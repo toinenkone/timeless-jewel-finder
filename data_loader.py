@@ -505,7 +505,7 @@ class DataLoader:
             for nid in notable_nodes:
                 global_id = self.read_lut(seed, nid, jewel_type)
                 name, sd, is_replacement = self._global_id_info(global_id)
-                if name and is_replacement:
+                if name:
                     node = self.tree_nodes[nid]
                     by_name[name].append({
                         'node_id': nid,
@@ -605,6 +605,11 @@ class DataLoader:
             for i, p in enumerate(self.passives)
             if p['dn'].lower() == notable_name.lower()
         }
+        # Also search flat-stat additions (global_id < 96) for jewels like LP/BR
+        target_global_ids.update(
+            gid for gid, a in enumerate(self.additions)
+            if a['dn'].lower() == notable_name.lower()
+        )
         if not target_global_ids:
             return {"error": f"Notable '{notable_name}' not found"}
 
@@ -741,6 +746,8 @@ class DataLoader:
                         passive_idx = global_id - TIMELESS_JEWEL_ADDITIONS
                         if passive_idx < len(self.passives):
                             counts[self.passives[passive_idx]['dn']] += 1
+                    elif global_id < len(self.additions):
+                        counts[self.additions[global_id]['dn']] += 1
             notables = sorted(
                 [{'name': n, 'count': c} for n, c in counts.items()],
                 key=lambda x: (-x['count'], x['name'])

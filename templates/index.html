@@ -693,8 +693,16 @@ function setStatus(el, msg, type) {
 async function loadPassives() {
   const jewel_type = parseInt(document.getElementById('n-jewel-type').value);
   try {
-    const res = await fetch(`/timeless/api/passives/${jewel_type}`);
-    allPassives = await res.json();
+    const [pRes, aRes] = await Promise.all([
+      fetch(`/timeless/api/passives/${jewel_type}`),
+      fetch(`/timeless/api/additions/${jewel_type}`),
+    ]);
+    const passives = await pRes.json();
+    const additions = await aRes.json();
+    allPassives = [
+      ...passives,
+      ...additions.map(a => ({name: a.dn, sd: a.sd})),
+    ];
     const dl = document.getElementById('n-notable-list');
     dl.innerHTML = allPassives.map(p => `<option value="${escHtml(p.name)}">`).join('');
   } catch(e) { console.error('Failed to load passives', e); }

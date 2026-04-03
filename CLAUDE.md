@@ -30,8 +30,22 @@ All endpoints require HTTP Basic Auth.
 | GET | `/timeless/api/jewel_types` | — | Returns list of supported jewel types with seed ranges |
 | POST | `/timeless/api/search` | `{"jewel_type": int, "seed": int}` | Returns sockets with duplicate notables |
 | POST | `/timeless/api/parse_item` | `{"item_text": string}` | Parses a PoE item tooltip paste, extracts jewel type + seed |
+| GET | `/timeless/api/passives` | — | Returns all replacement notables across all jewel types |
+| GET | `/timeless/api/passives/<jewel_type>` | — | Returns replacement notables for a specific jewel type |
+| GET | `/timeless/api/additions/<jewel_type>` | — | Returns small passive additions for a specific jewel type |
+| GET | `/timeless/api/sockets` | — | Returns all 57 jewel socket locations with coordinates |
+| GET | `/timeless/api/socket_nodes/<socket_id>` | — | Returns notable nodes within radius of a socket |
+| POST | `/timeless/api/search_notable` | `{"jewel_type": int, "notable_name": str, "min_count": int}` | Finds seeds where a named notable appears N+ times in any socket |
+| POST | `/timeless/api/search_conversion` | `{"jewel_type": int, "socket_id": int, "conversions": [...]}` | Finds seeds matching specific node-to-notable conversions in a socket |
+| POST | `/timeless/api/search_notable_nodes` | `{"jewel_type": int, "node_ids": [...], "socket_id": int, "min_count": int, "target_notable": str}` | Finds seeds where specific nodes convert to a target notable |
 
-`DataLoader` is instantiated once at startup (`app.py` module level); data loads into memory on server start (~3s), searches are instant thereafter.
+`DataLoader` is instantiated once at startup (`app.py` module level); data loads into memory on server start (~3s), searches are instant thereafter. Key fields after init:
+- `node_index_map`: `{node_id: {index, size}}` — LUT row index per passive node
+- `local_to_global`: `{jewel_type: {local_id: global_id}}` — per-jewel conversion tables
+- `passives` / `additions`: 0-indexed lists of `{dn, id, sd, is_keystone}` from LegionPassives.lua
+- `tree_nodes`: `{node_id: {name, x, y, is_jewel_socket, is_notable, is_keystone}}`
+- `jewel_sockets`: `{socket_id: {name, x, y, label, notable_nodes}}` — precomputed per-socket notable lists
+- `lut_cache`: `{jewel_type: bytes}` — decompressed LUT data, loaded on first search per jewel type
 
 ### Data Sources
 
